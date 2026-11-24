@@ -1,5 +1,4 @@
 {% load static %}
-{% get_media_prefix as MEDIA_URL %}
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -19,7 +18,7 @@
             background-color: #514a42;
             background-image:
                 linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.4)),
-                url('{{ MEDIA_URL }}habitaciones/{{ imagen_banner }}?v={{ imagen_banner_version }}');
+                url('{% static "hotel_app/images/habitaciones/portada.jpg" %}');
             background-position: center;
             background-size: cover;
             background-repeat: no-repeat;

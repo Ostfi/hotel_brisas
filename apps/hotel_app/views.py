@@ -2,7 +2,6 @@ from decimal import Decimal
 import logging
 import uuid
 from datetime import datetime
-from pathlib import Path
 from smtplib import SMTPException
 from django.contrib import messages
 from django.contrib.auth import get_user_model, login, logout
@@ -35,7 +34,6 @@ from .models import (
     ConsumoHabitacion,
     Habitacion,
     Huesped,
-    IMAGEN_BANNER,
     Reserva,
     ServicioAdicional,
     Pago,
@@ -150,15 +148,9 @@ def portal_cliente_home(request):
         .order_by('numero')
     )
     servicios = ServicioAdicional.objects.all()
-    imagen_banner_path = (
-        Path(settings.MEDIA_ROOT) / 'habitaciones' / IMAGEN_BANNER
-    )
-    imagen_banner_version = imagen_banner_path.stat().st_mtime_ns
     return render(request, 'hotel_app/portal_cliente_home.html', {
         'habitaciones': habitaciones,
         'servicios': servicios,
-        'imagen_banner': IMAGEN_BANNER,
-        'imagen_banner_version': imagen_banner_version,
         'es_cliente': (
             request.user.is_authenticated
             and not request.user.is_staff

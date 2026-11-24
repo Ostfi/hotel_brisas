@@ -118,13 +118,29 @@ class HabitacionEdicionFormTests(SimpleTestCase):
 
 
 class HabitacionImagenTests(SimpleTestCase):
+    def test_production_room_images_use_collected_static_assets(self):
+        habitacion = Habitacion(
+            numero='101',
+            tipo='Sencilla',
+            capacidad=1,
+            precio='90000.00',
+            piso=1,
+            imagen='habitaciones/subida-local.jpg',
+        )
+
+        with override_settings(DEBUG=False, STATIC_URL='/static/'):
+            self.assertEqual(
+                habitacion.get_imagen(),
+                '/static/hotel_app/images/habitaciones/sencilla.jpg',
+            )
+
     def test_double_rooms_share_the_configured_image(self):
         with TemporaryDirectory() as media_root:
             carpeta_habitaciones = Path(media_root) / 'habitaciones'
             carpeta_habitaciones.mkdir()
             (carpeta_habitaciones / 'doble.jpg').write_bytes(b'image')
 
-            with override_settings(MEDIA_ROOT=media_root):
+            with override_settings(DEBUG=True, MEDIA_ROOT=media_root):
                 image_urls = {
                     Habitacion(
                         numero=numero,
@@ -153,7 +169,7 @@ class HabitacionImagenTests(SimpleTestCase):
             carpeta_habitaciones.mkdir()
             (carpeta_habitaciones / 'habitacion-404.jpg').write_bytes(b'image')
 
-            with override_settings(MEDIA_ROOT=media_root):
+            with override_settings(DEBUG=True, MEDIA_ROOT=media_root):
                 self.assertEqual(
                     habitacion.get_imagen(),
                     '/media/habitaciones/habitacion-404.jpg',
@@ -174,7 +190,7 @@ class HabitacionImagenTests(SimpleTestCase):
             for image_name in image_names:
                 (carpeta_habitaciones / image_name).write_bytes(b'image')
 
-            with override_settings(MEDIA_ROOT=media_root):
+            with override_settings(DEBUG=True, MEDIA_ROOT=media_root):
                 image_urls = {
                     Habitacion(
                         numero=str(numero),

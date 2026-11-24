@@ -2,6 +2,7 @@ from pathlib import Path
 
 from django.conf import settings
 from django.db import models
+from django.templatetags.static import static
 from django.utils import timezone
 from django.utils.text import slugify
 from .validators import validate_digits, validate_letters_and_spaces
@@ -14,9 +15,14 @@ IMAGENES_POR_TIPO = {
     'Matrimonial': 'habitaciones/photo-1618773928121-c32242e63f39.avif',
     'Familiar': 'habitaciones/hotel-en-bocas-del-toro-habitaciones-familiares-6.jpg',
 }
+IMAGENES_ESTATICAS_POR_TIPO = {
+    'Sencilla': 'hotel_app/images/habitaciones/sencilla.jpg',
+    'Doble': 'hotel_app/images/habitaciones/doble.jpg',
+    'Matrimonial': 'hotel_app/images/habitaciones/matrimonial.avif',
+    'Familiar': 'hotel_app/images/habitaciones/familiar.jpg',
+}
 
-# Cambia el nombre para elegir la foto del banner en media/habitaciones/.
-IMAGEN_BANNER = 'portada.jpg'
+IMAGEN_BANNER = 'hotel_app/images/habitaciones/portada.jpg'
 
 
 
@@ -93,33 +99,31 @@ class Habitacion(models.Model):
             self.save(update_fields=['estado'])
 
     def get_imagen(self):
+        if self.imagen_url:
+            return self.imagen_url
+
         ruta_tipo = IMAGENES_POR_TIPO.get(self.tipo)
-        if ruta_tipo:
+        if settings.DEBUG and ruta_tipo:
             archivo_tipo = Path(settings.MEDIA_ROOT) / ruta_tipo
             if archivo_tipo.is_file():
                 return f'{settings.MEDIA_URL.rstrip("/")}/{ruta_tipo}'
 
-        if self.imagen:
+        if settings.DEBUG and self.imagen:
             return self.imagen.url
 
         nombre_habitacion = slugify(self.numero)
         extensiones_imagen = {'.jpg', '.jpeg', '.png', '.webp', '.avif'}
-        for extension in ('jpg', 'jpeg', 'png', 'webp', 'avif'):
-            nombre_archivo = f'habitacion-{nombre_habitacion}.{extension}'
-            ruta_imagen = (
-                Path(settings.MEDIA_ROOT) / 'habitaciones' / nombre_archivo
-            )
-            if ruta_imagen.is_file():
-                return (
-                    f'{settings.MEDIA_URL.rstrip("/")}/habitaciones/'
-                    f'{nombre_archivo}'
-                )
-
-        if self.imagen_url:
-            return self.imagen_url
-
         carpeta_imagenes = Path(settings.MEDIA_ROOT) / 'habitaciones'
-        if carpeta_imagenes.is_dir():
+        if settings.DEBUG and carpeta_imagenes.is_dir():
+            for extension in ('jpg', 'jpeg', 'png', 'webp', 'avif'):
+                nombre_archivo = f'habitacion-{nombre_habitacion}.{extension}'
+                ruta_imagen = carpeta_imagenes / nombre_archivo
+                if ruta_imagen.is_file():
+                    return (
+                        f'{settings.MEDIA_URL.rstrip("/")}/habitaciones/'
+                        f'{nombre_archivo}'
+                    )
+
             imagenes_disponibles = sorted(
                 archivo.name
                 for archivo in carpeta_imagenes.iterdir()
@@ -140,9 +144,11 @@ class Habitacion(models.Model):
                     f'{nombre_archivo}'
                 )
 
-        return (
-            f'{settings.MEDIA_URL.rstrip("/")}/'
-            'habitaciones/sin-imagen.svg'
+        return static(
+            IMAGENES_ESTATICAS_POR_TIPO.get(
+                self.tipo,
+                IMAGENES_ESTATICAS_POR_TIPO['Sencilla'],
+            ),
         )
 
 class Huesped(models.Model):
