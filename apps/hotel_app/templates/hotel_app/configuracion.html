@@ -1,0 +1,114 @@
+{% extends 'hotel_app/base.html' %}
+
+{% block content %}
+<!-- ENCABEZADO SUPERIOR -->
+<div class="d-flex justify-content-between align-items-start mb-4">
+    <div>
+        <h2 class="fw-bold text-dark mb-1" style="font-family: serif; letter-spacing: 0.5px;">CONFIGURACIÓN Y AJUSTES</h2>
+        <p class="text-muted small mb-0">Gestión de datos del hotel, parámetros del sistema y control de usuarios y roles.</p>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- INFORMACIÓN GENERAL DEL HOTEL -->
+    <div class="col-lg-6">
+        <div class="card border-0 shadow-sm rounded-4 bg-white p-4 h-100">
+            <h4 class="fw-bold text-dark mb-3" style="font-family: serif;">Datos del Hotel Brisas de La Guajira</h4>
+            <p class="text-muted small mb-4">Información institucional visible en reportes y facturas del sistema.</p>
+
+            <form>
+                <div class="mb-3">
+                    <label class="form-label fw-bold text-dark small">Nombre del Establecimiento</label>
+                    <input type="text" class="form-control rounded-3 py-2" value="Hotel Brisas de La Guajira" readonly>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold text-dark small">NIT</label>
+                    <input type="text" class="form-control rounded-3 py-2" value="900.123.456-7" readonly>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold text-dark small">Ubicación</label>
+                    <input type="text" class="form-control rounded-3 py-2" value="Riohacha, La Guajira, Colombia" readonly>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold text-dark small">Teléfono de Contacto</label>
+                    <input type="text" class="form-control rounded-3 py-2" value="+57 (605) 728-0000" readonly>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- GESTIÓN DE USUARIOS Y ROLES -->
+    <div class="col-lg-6">
+        <div class="card border-0 shadow-sm rounded-4 bg-white p-4 h-100">
+            <h4 class="fw-bold text-dark mb-3" style="font-family: serif;">Control de Accesos y Roles</h4>
+            <p class="text-muted small mb-4">Personal autorizado (Administradores y Recepcionistas).</p>
+
+            <div class="table-responsive mb-4" style="max-height: 220px; overflow-y: auto;">
+                <table class="table table-hover align-middle mb-0" style="font-size: 0.85rem;">
+                    <thead class="bg-light text-muted">
+                        <tr>
+                            <th class="py-2">Usuario</th>
+                            <th class="py-2">Rol</th>
+                            <th class="py-2">Estado</th>
+                            <th class="py-2 text-end">Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for u in usuarios %}
+                        <tr>
+                            <td class="fw-bold text-dark">{{ u.username }}</td>
+                            <td class="text-secondary">
+                                {% if u.is_superuser %}Administrador
+                                {% elif u.groups.all.0.name %} {{ u.groups.all.0.name }}
+                                {% else %} Recepcionista {% endif %}
+                            </td>
+                            <td>
+                                <span class="badge bg-success-subtle text-success">Activo</span>
+                            </td>
+                            <td class="text-end">
+                                {% if u != request.user %}
+                                <form method="POST" class="d-inline" onsubmit="return confirm('¿Estás seguro de eliminar el acceso a este usuario?');">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="eliminar_usuario_id" value="{{ u.id }}">
+                                    <button type="submit" class="btn btn-outline-danger btn-sm py-0 px-2" style="font-size: 0.75rem;" title="Eliminar Usuario">
+                                        <i class="bi bi-trash"></i> Eliminar
+                                    </button>
+                                </form>
+                                {% else %}
+                                <span class="text-muted small" style="font-size: 0.75rem;">(Tú)</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- FORMULARIO PARA CREAR NUEVO USUARIO Y ROL -->
+            <form method="POST">
+                {% csrf_token %}
+                <h6 class="fw-bold text-dark mb-2" style="font-size: 0.9rem;">Registrar Nuevo Usuario y Rol</h6>
+                <div class="row g-2 mb-3">
+                    <div class="col-md-6">
+                        <input type="text" name="nuevo_usuario" class="form-control rounded-3 py-2" placeholder="Nombre de usuario" style="font-size: 0.88rem;" required>
+                    </div>
+                    <div class="col-md-6">
+                        <input type="password" name="password" class="form-control rounded-3 py-2" placeholder="Contraseña" style="font-size: 0.88rem;" required>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold text-dark small">Asignar Rol en el Sistema</label>
+                    <select name="rol" class="form-select rounded-3 py-2" style="font-size: 0.88rem;" required>
+                        <option value="recepcion">Recepcionista (Control operativo y reservas)</option>
+                        <option value="admin">Administrador (Control total del sistema)</option>
+                        <option value="cliente">Cliente (Portal web de reservas)</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn text-white rounded-pill px-4 py-2 w-100 shadow-sm" style="background-color: #8c8275; font-size: 0.9rem;">
+                    Crear Usuario con Permisos
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

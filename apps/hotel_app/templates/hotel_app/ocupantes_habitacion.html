@@ -1,0 +1,77 @@
+{% extends 'hotel_app/base.html' %}
+
+{% block content %}
+<div class="mb-4">
+    <h2 class="fw-bold text-dark mb-1" style="font-family: serif;">HUÉSPEDES POR HABITACIÓN</h2>
+    <p class="text-muted small mb-0">Huéspedes principales y acompañantes registrados en habitaciones actualmente ocupadas.</p>
+</div>
+
+<div class="card border-0 shadow-sm rounded-4 overflow-hidden bg-white">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="bg-light text-uppercase text-muted" style="font-size: 0.75rem;">
+                <tr>
+                    <th scope="col" class="px-4 py-3">Habitación</th>
+                    <th scope="col" class="py-3">Estancia</th>
+                    <th scope="col" class="py-3">Huésped principal</th>
+                    <th scope="col" class="py-3">Acompañantes</th>
+                    <th scope="col" class="py-3 text-center">Ocupación</th>
+                    <!-- 1. NUEVA COLUMNA EN EL THEAD -->
+                    <th scope="col" class="py-3 text-center">ACCIONES</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for reserva in reservas %}
+                <tr>
+                    <th scope="row" class="px-4 py-3">
+                        <div class="fw-bold">Habitación {{ reserva.habitacion.numero }}</div>
+                        <div class="small text-muted">{{ reserva.habitacion.get_tipo_display }}</div>
+                    </th>
+                    <td class="text-nowrap">
+                        {{ reserva.fecha_ingreso|date:"d/m/Y" }} – {{ reserva.fecha_salida|date:"d/m/Y" }}
+                    </td>
+                    <td>
+                        <div class="fw-semibold">{{ reserva.huesped.nombres }} {{ reserva.huesped.apellidos }}</div>
+                        <div class="small text-muted">{{ reserva.huesped.get_tipo_documento_display }}: {{ reserva.huesped.numero_documento }}</div>
+                        <div class="small text-muted">{{ reserva.huesped.telefono }}</div>
+                    </td>
+                    <td>
+                        {% for acompanante in reserva.acompanantes.all %}
+                        <div class="{% if not forloop.first %}mt-2 pt-2 border-top{% endif %}">
+                            <div class="fw-semibold">{{ acompanante.nombres }} {{ acompanante.apellidos }}</div>
+                            <div class="small text-muted">{{ acompanante.get_tipo_documento_display }}: {{ acompanante.numero_documento }}</div>
+                            {% if acompanante.telefono %}
+                            <div class="small text-muted">{{ acompanante.telefono }}</div>
+                            {% endif %}
+                        </div>
+                        {% empty %}
+                        <span class="text-muted small">Sin acompañantes registrados</span>
+                        {% endfor %}
+                    </td>
+                    <td class="text-center">
+                        <span class="badge rounded-pill bg-primary-subtle text-primary">
+                            {{ reserva.cantidad_huespedes }} / {{ reserva.habitacion.capacidad }}
+                        </span>
+                    </td>
+                    <!-- 2. NUEVA CELDA CON EL BOTÓN DENTRO DEL TBODY -->
+                    <td class="text-center">
+                        <a href="{% url 'solicitar_servicio_habitacion' reserva.id %}" 
+                           class="btn btn-sm text-white rounded-pill px-3 shadow-sm" 
+                           style="background-color: #8c8275;">
+                            <i class="bi bi-bell-fill me-1"></i> Servicio solicitado por la habitación
+                        </a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" class="text-center text-muted py-5">
+                        <i class="bi bi-door-closed fs-3 d-block mb-2" aria-hidden="true"></i>
+                        No hay huéspedes alojados en este momento.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

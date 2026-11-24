@@ -1,0 +1,99 @@
+{% extends 'hotel_app/base.html' %}
+
+{% block content %}
+<div class="mb-4">
+    <h2 class="fw-bold text-dark mb-1" style="font-family: serif; letter-spacing: 0.5px;">CONTROL OPERATIVO DE HOY</h2>
+    <p class="text-muted small mb-0">Resumen de entradas (Check-in a las 3:00 PM) y salidas (Check-out a las 11:00 AM) programadas para el día de hoy.</p>
+</div>
+
+<!-- TARJETA DE LLEGADAS HOY (CHECK-IN) -->
+<div class="card border-0 shadow-sm rounded-4 overflow-hidden bg-white mb-4">
+    <div class="card-header bg-success text-white py-3 px-4">
+        <h5 class="mb-0 fw-bold" style="font-family: serif;"><i class="bi bi-box-arrow-in-right me-2"></i> Llegadas Programadas para Hoy (Check-in: 3:00 PM)</h5>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0" style="font-size: 0.9rem;">
+                <thead class="bg-light text-uppercase text-muted" style="font-size: 0.72rem; letter-spacing: 0.8px;">
+                    <tr>
+                        <th class="py-3 px-4">ID Reserva</th>
+                        <th class="py-3">Huésped Titular</th>
+                        <th class="py-3">Habitación</th>
+                        <th class="py-3">Salida (Check-Out)</th>
+                        <th class="py-3 text-end px-4">Acción / Estado</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for res in llegadas_hoy %}
+                    <tr>
+                        <td class="px-4 py-3 fw-bold text-dark">#{{ res.id }}</td>
+                        <td class="fw-medium text-dark">{{ res.huesped.nombres }} {{ res.huesped.apellidos }}</td>
+                        <td class="text-secondary">Hab. {{ res.habitacion.numero }} ({{ res.habitacion.tipo }})</td>
+                        <td class="text-secondary">{{ res.fecha_salida }}</td>
+                        <td class="text-end px-4">
+                            {% if res.habitacion.capacidad > 2 %}
+                            <a href="{% url 'realizar_checkin' res.id %}" class="btn btn-outline-success btn-sm rounded-pill px-3 py-1" onclick="return confirm('¿Confirmar llegada del huésped e iniciar estancia?');">
+                                Realizar Check-In
+                            </a>
+                            {% else %}
+                            <form method="post" action="{% url 'realizar_checkin' res.id %}" class="d-inline">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-outline-success btn-sm rounded-pill px-3 py-1" onclick="return confirm('¿Confirmar llegada del huésped e iniciar estancia?');">
+                                    Realizar Check-In
+                                </button>
+                            </form>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="text-center text-muted py-4">No hay llegadas programadas para el día de hoy.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- TARJETA DE SALIDAS HOY (CHECK-OUT) -->
+<div class="card border-0 shadow-sm rounded-4 overflow-hidden bg-white mb-4">
+    <div class="card-header bg-primary text-white py-3 px-4">
+        <h5 class="mb-0 fw-bold" style="font-family: serif;"><i class="bi bi-box-arrow-right me-2"></i> Salidas Programadas para Hoy (Check-out límite: 11:00 AM)</h5>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0" style="font-size: 0.9rem;">
+                <thead class="bg-light text-uppercase text-muted" style="font-size: 0.72rem; letter-spacing: 0.8px;">
+                    <tr>
+                        <th class="py-3 px-4">ID Reserva</th>
+                        <th class="py-3">Huésped Titular</th>
+                        <th class="py-3">Habitación</th>
+                        <th class="py-3">Ingreso Original</th>
+                        <th class="py-3 text-end px-4">Acción / Estado</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for res in salidas_hoy %}
+                    <tr>
+                        <td class="px-4 py-3 fw-bold text-dark">#{{ res.id }}</td>
+                        <td class="fw-medium text-dark">{{ res.huesped.nombres }} {{ res.huesped.apellidos }}</td>
+                        <td class="text-secondary">Hab. {{ res.habitacion.numero }} ({{ res.habitacion.tipo }})</td>
+                        <td class="text-secondary">{{ res.fecha_ingreso }}</td>
+                        <td class="text-end px-4">
+                            <a href="{% url 'realizar_checkout' res.id %}" class="btn btn-outline-primary btn-sm rounded-pill px-3 py-1" onclick="return confirm('¿Confirmar salida? La habitación quedará libre y marcada para limpieza.');">
+                                Realizar Check-Out (11 AM)
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="text-center text-muted py-4">No hay salidas programadas para el día de hoy.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

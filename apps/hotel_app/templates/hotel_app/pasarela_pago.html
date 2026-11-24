@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pago seguro - Hotel Brisas</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background: #f5f5f3; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        .btn-hotel { background: #8c8275; color: #fff; }
+        .btn-hotel:hover { background: #7a7064; color: #fff; }
+        .payment-option { border: 1px solid #e1ded9; border-radius: 12px; padding: 12px 16px; }
+    </style>
+</head>
+<body>
+    <nav class="navbar bg-white border-bottom px-4 py-3 shadow-sm">
+        <div class="container"><a class="navbar-brand fw-bold text-dark" href="{% url 'mis_reservas_cliente' %}">BRISAS RESORT</a></div>
+    </nav>
+    <main class="container py-5">
+        <div class="d-flex justify-content-center gap-2 mb-4 text-center small">
+            <span class="badge rounded-pill text-bg-success px-3 py-2">1. Fechas ✓</span>
+            <span class="badge rounded-pill text-bg-success px-3 py-2">2. Tus datos ✓</span>
+            <span class="badge rounded-pill text-bg-dark px-3 py-2">3. Pago</span>
+            <span class="badge rounded-pill text-bg-light text-secondary px-3 py-2">4. Confirmación</span>
+        </div>
+        <div class="row justify-content-center g-4">
+            <div class="col-lg-7">
+                <div class="card border-0 shadow-sm rounded-4">
+                    <div class="card-body p-4 p-md-5">
+                        <h1 class="h3 fw-bold mb-2" style="font-family: Georgia, serif;">Selecciona cómo pagar</h1>
+                        <p class="text-muted mb-4">Pasarela de demostración: no se realizará ningún cobro real.</p>
+                        {% if messages %}
+                            {% for message in messages %}<div class="alert alert-warning">{{ message }}</div>{% endfor %}
+                        {% endif %}
+                        <form method="post" novalidate>
+                            {% csrf_token %}
+                            <fieldset class="mb-4">
+                                <legend class="h6 fw-bold">¿Cuánto deseas pagar ahora?</legend>
+                                {% for radio in form.modalidad_pago %}
+                                    <label class="payment-option d-flex align-items-center gap-2 mb-2">
+                                        {{ radio.tag }} <span>{{ radio.choice_label }}</span>
+                                    </label>
+                                {% endfor %}
+                                {% for error in form.modalidad_pago.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                            </fieldset>
+                            <fieldset class="mb-4">
+                                <legend class="h6 fw-bold">Método de pago</legend>
+                                <div class="row g-2">
+                                    {% for radio in form.metodo_pago %}
+                                        <div class="col-sm-6">
+                                            <label class="payment-option d-flex align-items-center gap-2 h-100">
+                                                {{ radio.tag }} <span>{{ radio.choice_label }}</span>
+                                            </label>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                                {% for error in form.metodo_pago.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
+                            </fieldset>
+                            <div class="d-flex flex-column flex-sm-row justify-content-between gap-2 mt-4">
+                                <a href="{% url 'checkout_datos_huesped' %}" class="btn btn-outline-secondary rounded-pill px-4">Volver a mis datos</a>
+                                <button type="submit" class="btn btn-hotel rounded-pill px-4">Pagar de forma segura</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            <aside class="col-lg-4">
+                <div class="card border-0 shadow-sm rounded-4">
+                    <div class="card-body p-4">
+                        <h2 class="h5 fw-bold">Resumen de estadía</h2>
+                        <p class="mb-1">Habitación {{ habitacion.numero }} · {{ habitacion.tipo }}</p>
+                        <p class="small text-muted mb-1">{{ datos.fecha_ingreso }} al {{ datos.fecha_salida }}</p>
+                        <p class="small text-muted">{{ datos.noches }} noche(s) · {{ datos.cantidad_huespedes }} huésped(es)</p>
+                        <hr>
+                        <div class="d-flex justify-content-between fw-bold"><span>Total</span><span>${{ valor_total|floatformat:0 }} COP</span></div>
+                        <div class="d-flex justify-content-between text-muted small mt-2"><span>Anticipo del 50%</span><span>${{ anticipo|floatformat:0 }} COP</span></div>
+                    </div>
+                </div>
+            </aside>
+        </div>
+    </main>
+</body>
+</html>

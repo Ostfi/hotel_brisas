@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portal de clientes - Hotel Brisas de La Guajira</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f5f5f3;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .hotel-color {
+            background-color: #8c8275;
+        }
+    </style>
+</head>
+<body>
+    <header class="bg-white shadow-sm">
+        <div class="container py-3 d-flex justify-content-between align-items-center">
+            <div>
+                <h1 class="h4 fw-bold mb-0" style="font-family: serif;">BRISAS RESORT</h1>
+                <small class="text-muted">Portal de clientes</small>
+            </div>
+            <form method="POST" action="{% url 'logout' %}">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-outline-secondary rounded-pill">Cerrar sesión</button>
+            </form>
+        </div>
+    </header>
+
+    <main class="container py-5">
+        <h2 class="fw-bold mb-2">Bienvenido, {{ request.user.username|title }}</h2>
+        <p class="text-muted mb-4">Consulta las habitaciones disponibles para tu estadía.</p>
+
+        <div class="row g-4">
+            {% for habitacion in habitaciones %}
+                <div class="col-md-6 col-lg-4">
+                    <article class="card h-100 border-0 shadow-sm rounded-4 overflow-hidden">
+                        <img src="{{ habitacion.get_imagen }}" class="card-img-top"
+                             style="height: 190px; object-fit: cover;"
+                             alt="Habitación tipo {{ habitacion.tipo }}">
+                        <div class="card-body p-4">
+                            <h3 class="h5 fw-bold">{{ habitacion.tipo }}</h3>
+                            <p class="text-muted mb-2">{{ habitacion.capacidad }} persona(s)</p>
+                            {% if habitacion.descripcion %}
+                                <p class="small">{{ habitacion.descripcion }}</p>
+                            {% endif %}
+                            <p class="fw-bold mb-0">${{ habitacion.precio }} COP por noche</p>
+                        </div>
+                    </article>
+                </div>
+            {% empty %}
+                <div class="col-12">
+                    <div class="alert alert-info">En este momento no hay habitaciones disponibles.</div>
+                </div>
+            {% endfor %}
+        </div>
+
+        <p class="text-center text-muted mt-5">
+            Para solicitar una reserva, comunícate con la recepción del hotel.
+        </p>
+    </main>
+</body>
+</html>

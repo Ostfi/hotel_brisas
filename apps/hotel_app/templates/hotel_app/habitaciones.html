@@ -1,0 +1,107 @@
+{% extends 'hotel_app/base.html' %}
+
+{% block content %}
+<!-- encabezado -->
+<div class="d-flex justify-content-between align-items-start mb-4">
+    <div>
+        <h2 class="fw-bold text-dark" style="font-family: serif;">Control de Habitaciones</h2>
+        <p class="text-muted mb-0">Vista detallada de la disponibilidad, condiciones de limpieza y necesidades del hotel.</p>
+    </div>
+    <div>
+        <a href="{% url 'lista_habitaciones' %}?reporte=limpieza#inventario" class="btn btn-outline-secondary rounded-pill me-2">Reporte de Limpieza</a>
+        <a href="#inventario" class="btn text-white rounded-pill" style="background-color: #8c8275;">Acciones Rápidas</a>
+        {% if hotel_es_administrador %}
+        <a href="{% url 'crear_habitacion' %}" class="btn text-white rounded-pill px-4 shadow-sm" style="background-color: #8c8275; font-size: 0.9rem;">
+            + Nueva Habitación
+        </a>
+        {% endif %}
+    </div>
+</div>
+
+<!-- filtro de busqueda -->
+<div class="mb-4">
+    <a href="{% url 'lista_habitaciones' %}" class="filter-btn {% if not tipo_actual %}active{% endif %}">Todas</a>
+    <a href="{% url 'lista_habitaciones' %}?tipo=Sencilla" class="filter-btn {% if tipo_actual == 'Sencilla' %}active{% endif %}">Sencilla</a>
+    <a href="{% url 'lista_habitaciones' %}?tipo=Doble" class="filter-btn {% if tipo_actual == 'Doble' %}active{% endif %}">Doble</a>
+    <a href="{% url 'lista_habitaciones' %}?tipo=Matrimonial" class="filter-btn {% if tipo_actual == 'Matrimonial' %}active{% endif %}">Matrimonial</a>
+    <a href="{% url 'lista_habitaciones' %}?tipo=Familiar" class="filter-btn {% if tipo_actual == 'Familiar' %}active{% endif %}">Familiar</a>
+</div>
+
+<div id="inventario" class="d-flex justify-content-between align-items-center mb-3">
+    <h5 class="fw-bold text-secondary mb-0" style="font-family: serif;">Inventario Actual</h5>
+    <small class="text-muted">Mostrando {{ habitaciones.count }} habitaciones{% if reporte_limpieza %} pendientes de limpieza{% endif %}</small>
+</div>
+
+<!-- etiqueta de la habitaciones -->
+<div class="row g-4">
+    {% for hab in habitaciones %}
+    <div class="col-md-6 col-lg-4">
+        <div class="card border-0 shadow-sm rounded-4 h-100 overflow-hidden">
+            <!-- IMAGEN DE LA HABITACIÓN -->
+            <div style="height: 150px; overflow: hidden; position: relative;">
+                <img src="{{ hab.get_imagen }}" class="w-100 h-100" style="object-fit: cover;" alt="Habitación {{ hab.numero }}">
+                <span class="position-absolute top-0 end-0 m-3 badge-status 
+                    {% if hab.estado == 'Disponible' %}badge-disponible
+                    {% elif hab.estado == 'Ocupada' %}badge-ocupado
+                    {% elif hab.estado == 'Reservada' %}badge-reservado
+                    {% else %}badge-mantenimiento{% endif %}">
+                    {{ hab.estado }}
+                </span>
+            </div>
+
+            <div class="card-body p-4">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h3 class="fw-bold mb-0" style="font-family: serif;">{{ hab.numero }}</h3>
+                    <span class="text-primary fw-bold">${{ hab.precio }} COP</span>
+                </div>
+                <p class="text-muted small mb-3">{{ hab.tipo }} — Piso {{ hab.piso }}</p>
+
+                <div class="small text-secondary mb-1 d-flex justify-content-between">
+                    <span>Huésped asignado:</span>
+                    <strong class="text-dark">Ninguno</strong>
+                </div>
+                <div class="small text-secondary mb-1 d-flex justify-content-between">
+                    <span>Limpieza:</span>
+                    <strong class="{% if hab.limpieza == 'Limpio' %}text-success{% else %}text-danger{% endif %}">• {{ hab.limpieza }}</strong>
+                </div>
+                <div class="small text-secondary mb-3 d-flex justify-content-between">
+                    <span>Mantenimiento:</span>
+                    <strong class="text-dark">{{ hab.mantenimiento }}</strong>
+                </div>
+
+                <!-- botones -->
+                <div class="row g-2 pt-2 border-top">
+                    <div class="col-6">
+                        <form method="POST" action="{% url 'accion_habitacion' hab.id 'limpiar' %}">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-light w-100 btn-sm text-secondary border">Marcar limpia</button>
+                        </form>
+                    </div>
+                    <div class="col-6">
+                        {% if hab.mantenimiento == 'Bloqueada temporalmente' %}
+                            <form method="POST" action="{% url 'accion_habitacion' hab.id 'desbloquear' %}">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-outline-success w-100 btn-sm">Desbloquear</button>
+                            </form>
+                        {% else %}
+                            <form method="POST" action="{% url 'accion_habitacion' hab.id 'bloquear' %}">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-light w-100 btn-sm text-secondary border" {% if hab.estado != 'Disponible' %}disabled title="Solo se bloquean habitaciones disponibles"{% endif %}>Bloquear</button>
+                            </form>
+                        {% endif %}
+                    </div>
+                    <div class="col-6">
+                        <a href="{% url 'editar_habitacion' hab.id %}" class="btn btn-outline-dark w-100 btn-sm rounded-pill">Editar</a>
+                    </div>
+                    
+                </div>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="col-12">
+        <div class="alert alert-info">No hay habitaciones que coincidan con este filtro.</div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

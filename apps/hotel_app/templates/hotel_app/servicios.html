@@ -1,0 +1,42 @@
+{% extends 'hotel_app/base.html' %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-start mb-4">
+    <div>
+        <h2 class="fw-bold text-dark mb-1" style="font-family: serif; letter-spacing: 0.5px;">SERVICIOS ADICIONALES</h2>
+        <p class="text-muted small mb-0">Consulta los servicios disponibles y sus precios.</p>
+    </div>
+    <a href="{% url 'crear_servicio' %}" class="btn text-white rounded-pill px-4 shadow-sm" style="background-color: #8c8275; font-size: 0.9rem;">
+        + Nuevo Servicio
+    </a>
+</div>
+
+<div class="card border-0 shadow-sm rounded-4 overflow-hidden bg-white">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0" style="font-size: 0.9rem;">
+                <thead class="bg-light text-uppercase text-muted" style="font-size: 0.72rem; letter-spacing: 0.8px;">
+                    <tr>
+                        <th class="py-3 px-4">Servicio</th>
+                        <th class="py-3">Precio</th>
+                        <th class="py-3 px-4">Descripción</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for servicio in servicios %}
+                    <tr>
+                        <td class="px-4 py-3 fw-bold text-dark">{{ servicio.nombre }}</td>
+                        <td class="fw-bold text-success">${{ servicio.precio|floatformat:2 }} COP</td>
+                        <td class="px-4 text-secondary">{{ servicio.descripcion|default:"Sin descripción" }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="3" class="text-center text-muted py-4">No hay servicios registrados en el sistema.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

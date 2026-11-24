@@ -1,0 +1,98 @@
+{% extends 'hotel_app/base.html' %}
+
+{% block content %}
+<div class="d-flex justify-content-center align-items-center py-2">
+    <div class="card border-0 shadow-sm rounded-4 bg-white" style="max-width: 650px; width: 100%;">
+        <div class="card-body p-4 p-md-5">
+            <h3 class="fw-bold mb-4 text-dark" style="font-family: serif; letter-spacing: 0.3px;">Registrar Nuevo Huésped</h3>
+
+            <form method="POST">
+                {% csrf_token %}
+                {% if form.non_field_errors %}
+                    <div class="alert alert-danger" role="alert">{{ form.non_field_errors }}</div>
+                {% endif %}
+
+                <div class="row g-3 mb-3">
+                    <div class="col-md-5">
+                        <label for="{{ form.tipo_documento.id_for_label }}" class="form-label fw-bold text-dark small">Tipo de Documento</label>
+                        {{ form.tipo_documento }}
+                        {% for error in form.tipo_documento.errors %}
+                            <div class="text-danger small mt-1">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                    <div class="col-md-7">
+                        <label for="{{ form.numero_documento.id_for_label }}" class="form-label fw-bold text-dark small">Número de Documento</label>
+                        {{ form.numero_documento }}
+                        {% for error in form.numero_documento.errors %}
+                            <div class="text-danger small mt-1">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div class="row g-3 mb-3">
+                    <div class="col-md-6">
+                        <label for="{{ form.nombres.id_for_label }}" class="form-label fw-bold text-dark small">Nombres</label>
+                        {{ form.nombres }}
+                        {% for error in form.nombres.errors %}
+                            <div class="text-danger small mt-1">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                    <div class="col-md-6">
+                        <label for="{{ form.apellidos.id_for_label }}" class="form-label fw-bold text-dark small">Apellidos</label>
+                        {{ form.apellidos }}
+                        {% for error in form.apellidos.errors %}
+                            <div class="text-danger small mt-1">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div class="row g-3 mb-3">
+                    <div class="col-md-6">
+                        <label for="{{ form.telefono.id_for_label }}" class="form-label fw-bold text-dark small">Teléfono</label>
+                        {{ form.telefono }}
+                        {% for error in form.telefono.errors %}
+                            <div class="text-danger small mt-1">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                    <div class="col-md-6">
+                        <label for="{{ form.correo.id_for_label }}" class="form-label fw-bold text-dark small">Correo Electrónico</label>
+                        {{ form.correo }}
+                        {% for error in form.correo.errors %}
+                            <div class="text-danger small mt-1">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <label for="{{ form.nacionalidad.id_for_label }}" class="form-label fw-bold text-dark small">Nacionalidad</label>
+                    {{ form.nacionalidad }}
+                    {% for error in form.nacionalidad.errors %}
+                        <div class="text-danger small mt-1">{{ error }}</div>
+                    {% endfor %}
+                </div>
+
+                <div class="d-flex justify-content-between align-items-center pt-2">
+                    <a href="{% url 'lista_huespedes' %}" class="btn btn-outline-secondary rounded-pill px-4 py-2" style="font-size: 0.9rem;">
+                        Cancelar
+                    </a>
+                    <button type="submit" class="btn text-white rounded-pill px-4 py-2 shadow-sm" style="background-color: #8c8275; font-size: 0.9rem;">
+                        Guardar Huésped
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<script>
+    document.querySelectorAll('[data-digits-only]').forEach((input) => {
+        input.addEventListener('input', () => {
+            input.value = input.value.replace(/[^0-9]/g, '');
+        });
+    });
+    document.querySelectorAll('[data-letters-only]').forEach((input) => {
+        input.addEventListener('input', () => {
+            input.value = input.value.replace(/[^\p{L} ]/gu, '');
+        });
+    });
+</script>
+{% endblock %}

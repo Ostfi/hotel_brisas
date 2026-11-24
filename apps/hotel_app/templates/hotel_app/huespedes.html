@@ -1,0 +1,116 @@
+{% extends 'hotel_app/base.html' %}
+
+{% block content %}
+<!-- ENCABEZADO SUPERIOR -->
+<div class="d-flex justify-content-between align-items-start mb-4">
+    <div>
+        <h2 class="fw-bold text-dark mb-1" style="font-family: serif; letter-spacing: 0.5px;">GESTIÓN DE HUÉSPEDES</h2>
+        <p class="text-muted small mb-0">Base de datos de huéspedes actuales, historiales de estancia y registro de visitantes.</p>
+    </div>
+    <div>
+        <a href="{% url 'crear_huesped' %}" class="btn text-white rounded-pill px-4 shadow-sm" style="background-color: #8c8275; font-size: 0.9rem;">
+            + Nuevo Huésped
+        </a>
+    </div>
+</div>
+
+<!-- BARRA DE FILTROS, BÚSQUEDA Y EXPORTACIÓN CSV -->
+<form method="GET" action="" class="row mb-4 align-items-center">
+    <div class="col-md-5">
+        <div class="input-group bg-white rounded-pill shadow-sm border px-3 py-1">
+            <span class="input-group-text bg-transparent border-0 text-muted ps-0">
+                <i class="bi bi-search"></i>
+            </span>
+            <input type="text" name="q" value="{{ request.GET.q }}" class="form-control border-0 shadow-none bg-transparent" placeholder="Buscar por nombre, documento o correo..." style="font-size: 0.88rem;">
+            <button type="submit" class="btn btn-sm text-secondary border-0"><i class="bi bi-arrow-right"></i></button>
+        </div>
+    </div>
+    <div class="col-md-7 text-md-end mt-3 mt-md-0">
+        <a href="{% url 'lista_huespedes' %}" class="btn btn-white bg-white border rounded-pill px-3 py-2 text-secondary shadow-sm me-2 text-decoration-none" style="font-size: 0.88rem;">
+            <i class="bi bi-arrow-counterclockwise"></i> Limpiar Filtros
+        </a>
+        <button type="submit" name="exportar" value="csv" class="btn btn-white bg-white border rounded-pill px-3 py-2 text-secondary shadow-sm" style="font-size: 0.88rem;">
+            <i class="bi bi-file-earmark-spreadsheet me-1"></i> Exportar CSV
+        </button>
+    </div>
+</form>
+
+<!-- TABLA DE HUÉSPEDES ESTILIZADA -->
+<div class="card border-0 shadow-sm rounded-4 overflow-hidden bg-white">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0" style="font-size: 0.9rem;">
+                <thead class="bg-light text-uppercase text-muted" style="font-size: 0.72rem; letter-spacing: 0.8px;">
+                    <tr>
+                        <th class="py-3 px-4">Huésped</th>
+                        <th class="py-3">Documento</th>
+                        <th class="py-3">Teléfono</th>
+                        <th class="py-3">Correo</th>
+                        <th class="py-3">Nacionalidad</th>
+                        <th class="py-3">Estado</th>
+                        <th class="py-3 text-end px-4">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for h in huespedes %}
+                    <tr>
+                        <td class="px-4 py-3">
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="rounded-circle bg-light text-dark fw-bold d-flex justify-content-center align-items-center border" style="width: 35px; height: 35px; font-size: 0.78rem;">
+                                    {{ h.nombres|slice:":1" }}{{ h.apellidos|slice:":1" }}
+                                </div>
+                                <span class="fw-bold text-dark">{{ h.nombres }} {{ h.apellidos }}</span>
+                            </div>
+                        </td>
+                        <td class="text-secondary">{{ h.tipo_documento }}: {{ h.numero_documento }}</td>
+                        <td class="text-secondary">{{ h.telefono }}</td>
+                        <td class="text-secondary">{{ h.correo }}</td>
+                        <td class="text-secondary">{{ h.nacionalidad }}</td>
+                        <td>
+                            <span class="badge rounded-pill px-3 py-1 fw-normal" style="background-color: #cfe2ff; color: #084298; font-size: 0.75rem;">
+                                Registrado
+                            </span>
+                        </td>
+                        <td class="text-end px-4">
+                            <!-- BOTÓN DINÁMICO QUE ABRE EL MODAL -->
+                            <button type="button" class="btn btn-link text-decoration-none fw-medium p-0" style="color: #8c8275; font-size: 0.88rem;" 
+                                data-bs-toggle="modal" data-bs-target="#modalHuesped{{ h.id }}">
+                                Ver detalle
+                            </button>
+                        </td>
+                    </tr>
+
+                    <!-- VENTANA MODAL DE DETALLE PARA CADA HUÉSPED -->
+                    <div class="modal fade" id="modalHuesped{{ h.id }}" tabindex="-1" aria-hidden="true">
+                        <div class="modal-dialog modal-dialog-centered">
+                            <div class="modal-content border-0 shadow rounded-4 p-3">
+                                <div class="modal-header border-0 pb-0">
+                                    <h5 class="fw-bold text-dark mb-0" style="font-family: serif;">Detalles del Huésped</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                                </div>
+                                <div class="modal-body py-4">
+                                    <div class="bg-light p-3 rounded-3">
+                                        <p class="mb-1 small text-secondary"><strong>Nombres y Apellidos:</strong> {{ h.nombres }} {{ h.apellidos }}</p>
+                                        <p class="mb-1 small text-secondary"><strong>Documento de Identidad:</strong> {{ h.tipo_documento }} - {{ h.numero_documento }}</p>
+                                        <p class="mb-1 small text-secondary"><strong>Teléfono:</strong> {{ h.telefono }}</p>
+                                        <p class="mb-1 small text-secondary"><strong>Correo electrónico:</strong> {{ h.correo }}</p>
+                                        <p class="mb-0 small text-secondary"><strong>Nacionalidad:</strong> {{ h.nacionalidad }}</p>
+                                    </div>
+                                </div>
+                                <div class="modal-footer border-0 pt-0">
+                                    <button type="button" class="btn btn-outline-secondary rounded-pill px-4 py-1.5" data-bs-dismiss="modal" style="font-size: 0.85rem;">Cerrar</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="text-center text-muted py-4">No se encontraron huéspedes registrados con ese criterio.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

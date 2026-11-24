@@ -1,0 +1,88 @@
+{% extends 'hotel_app/base.html' %}
+
+{% block content %}
+<!-- ENCABEZADO SUPERIOR -->
+<div class="d-flex justify-content-between align-items-start mb-4">
+    <div>
+        <h2 class="fw-bold text-dark mb-1" style="font-family: serif; letter-spacing: 0.5px;">REGISTRO DE PAGOS</h2>
+        <p class="text-muted small mb-0">Control de transacciones financieras, abonos y métodos de pago del hotel.</p>
+    </div>
+    <div>
+        <a href="{% url 'crear_pago' %}" class="btn text-white rounded-pill px-4 shadow-sm" style="background-color: #8c8275; font-size: 0.9rem;">
+            + Nuevo Pago
+        </a>
+    </div>
+</div>
+
+<!-- TABLA DE PAGOS ESTILIZADA -->
+<div class="card border-0 shadow-sm rounded-4 overflow-hidden bg-white">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0" style="font-size: 0.9rem;">
+                <thead class="bg-light text-uppercase text-muted" style="font-size: 0.72rem; letter-spacing: 0.8px;">
+                    <tr>
+                        <th class="py-3 px-4">ID Pago</th>
+                        <th class="py-3">Reserva</th>
+                        <th class="py-3">Huésped</th>
+                        <th class="py-3">Monto</th>
+                        <th class="py-3">Método de Pago</th>
+                        <th class="py-3">Fecha y Hora</th>
+                        <th class="py-3 text-end px-4">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for p in pagos %}
+                    <tr>
+                        <td class="px-4 py-3 fw-bold text-dark">#{{ p.id }}</td>
+                        <td class="text-secondary">Reserva #{{ p.reserva.id }}</td>
+                        <td class="fw-medium text-dark">{{ p.reserva.huesped.nombres }} {{ p.reserva.huesped.apellidos }}</td>
+                        <td class="fw-bold text-success">${{ p.monto }} COP</td>
+                        <td>
+                            <span class="badge rounded-pill px-3 py-1 fw-normal bg-light text-dark border" style="font-size: 0.75rem;">
+                                {{ p.metodo_pago }}
+                            </span>
+                        </td>
+                        <td class="text-secondary small">{{ p.fecha_pago|date:"Y-m-d H:i" }}</td>
+                        <td class="text-end px-4">
+                            <!-- BOTÓN FUNCIONAL QUE ABRE EL MODAL DE DETALLE -->
+                            <button type="button" class="btn btn-link text-decoration-none fw-medium p-0" style="color: #8c8275; font-size: 0.88rem;" 
+                                data-bs-toggle="modal" data-bs-target="#modalPago{{ p.id }}">
+                                Ver detalle
+                            </button>
+                        </td>
+                    </tr>
+
+                    <!-- VENTANA MODAL DE DETALLE PARA CADA PAGO -->
+                    <div class="modal fade" id="modalPago{{ p.id }}" tabindex="-1" aria-hidden="true">
+                        <div class="modal-dialog modal-dialog-centered">
+                            <div class="modal-content border-0 shadow rounded-4 p-3">
+                                <div class="modal-header border-0 pb-0">
+                                    <h5 class="fw-bold text-dark mb-0" style="font-family: serif;">Detalle del Pago #{{ p.id }}</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                                </div>
+                                <div class="modal-body py-4">
+                                    <div class="bg-light p-3 rounded-3">
+                                        <p class="mb-1 small text-secondary"><strong>Asociado a Reserva:</strong> #{{ p.reserva.id }}</p>
+                                        <p class="mb-1 small text-secondary"><strong>Huésped:</strong> {{ p.reserva.huesped.nombres }} {{ p.reserva.huesped.apellidos }}</p>
+                                        <p class="mb-1 small text-secondary"><strong>Monto cancelado:</strong> ${{ p.monto }} COP</p>
+                                        <p class="mb-1 small text-secondary"><strong>Método de pago:</strong> {{ p.metodo_pago }}</p>
+                                        <p class="mb-0 small text-secondary"><strong>Fecha de transacción:</strong> {{ p.fecha_pago|date:"Y-m-d H:i" }}</p>
+                                    </div>
+                                </div>
+                                <div class="modal-footer border-0 pt-0">
+                                    <button type="button" class="btn btn-outline-secondary rounded-pill px-4 py-1.5" data-bs-dismiss="modal" style="font-size: 0.85rem;">Cerrar</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="text-center text-muted py-4">No hay pagos registrados en el sistema.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

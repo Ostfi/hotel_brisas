@@ -1,0 +1,161 @@
+{% load static %}
+{% get_media_prefix as MEDIA_URL %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hotel Brisas de La Guajira</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <style>
+        body { background-color: #f5f5f3; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        .top-bar { background-color: #6b6256; color: #fff; font-size: 0.85rem; padding: 6px 0; }
+        .main-navbar { background-color: #8c8275; }
+        .nav-link-public { color: #ffffff !important; font-weight: 500; font-size: 0.95rem; margin: 0 10px; transition: opacity 0.2s; }
+        .nav-link-public:hover { opacity: 0.8; }
+        .hero-section {
+            position: relative;
+            background-color: #514a42;
+            background-image:
+                linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.4)),
+                url('{{ MEDIA_URL }}habitaciones/{{ imagen_banner }}?v={{ imagen_banner_version }}');
+            background-position: center;
+            background-size: cover;
+            background-repeat: no-repeat;
+            height: 450px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            text-align: center;
+        }
+        .hero-title { font-family: 'Georgia', serif; font-size: 3rem; letter-spacing: 1px; text-shadow: 0 2px 4px rgba(0,0,0,0.5); }
+        .footer-custom { background-color: #1e1e1e; color: #b0b0b0; padding: 3rem 0 1.5rem; }
+    </style>
+</head>
+<body>
+
+    <!-- BARRA SUPERIOR DE CONTACTO -->
+    <div class="top-bar">
+        <div class="container text-end">
+            <i class="bi bi-phone me-1"></i> 321 3846918 | 312 4191129
+        </div>
+    </div>
+
+    <!-- MENÚ DE NAVEGACIÓN PRINCIPAL -->
+    <nav class="navbar navbar-expand-lg main-navbar sticky-top shadow-sm py-3">
+        <div class="container">
+            <a class="navbar-brand text-white fw-bold fs-4" href="#" style="font-family: serif;">
+                Hotel Brisas de La Guajira
+            </a>
+            <button class="navbar-toggler border-0 text-white" type="button" data-bs-toggle="collapse" data-bs-target="#publicNav">
+                <span class="navbar-toggler-icon filter-invert"></span>
+            </button>
+            <div class="collapse navbar-collapse justify-content-end" id="publicNav">
+                <ul class="navbar-nav align-items-center">
+                    <li class="nav-item"><a class="nav-link nav-link-public" href="#">Inicio</a></li>
+                    <li class="nav-item"><a class="nav-link nav-link-public" href="#habitaciones">Habitaciones</a></li>
+                    <li class="nav-item"><a class="nav-link nav-link-public" href="#servicios">Servicios</a></li>
+                    <li class="nav-item"><a class="nav-link nav-link-public" href="#contacto">Contacto</a></li>
+                    {% if es_cliente %}
+                        <li class="nav-item ms-3">
+                            <a href="{% url 'mis_reservas_cliente' %}" class="btn btn-light rounded-pill px-4 text-dark fw-bold" style="font-size: 0.9rem;">Mi Panel</a>
+                        </li>
+                    {% elif es_personal %}
+                        <li class="nav-item ms-3">
+                            <a href="{% url 'lista_habitaciones' %}" class="btn btn-light rounded-pill px-4 text-dark fw-bold" style="font-size: 0.9rem;">Panel del personal</a>
+                        </li>
+                    {% else %}
+                        <li class="nav-item ms-3">
+                            <a href="{% url 'login' %}" class="btn btn-outline-light rounded-pill px-3 me-2" style="font-size: 0.9rem;">Iniciar Sesión</a>
+                        </li>
+                        {% if not user.is_authenticated %}
+                            <li class="nav-item">
+                                <a href="{% url 'registro_cliente_publico' %}" class="btn btn-light rounded-pill px-3 text-dark fw-bold" style="font-size: 0.9rem;">Registrarse</a>
+                            </li>
+                        {% endif %}
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- BANNER HERO -->
+    <header class="hero-section">
+        <div class="container">
+            <h1 class="hero-title">Hotel Brisas de La Guajira</h1>
+        </div>
+    </header>
+
+    <!-- CONTENIDO INFORMATIVO -->
+    <main class="container my-5">
+        <div class="row g-5 align-items-center mb-5">
+            <div class="col-lg-7">
+                <h2 class="fw-bold mb-3" style="font-family: serif; color: #332f2a;">Hotel Brisas de La Guajira</h2>
+                <p class="text-secondary lh-lg">
+                    Te damos la bienvenida a nuestro oasis de lujo en armonía con la naturaleza. Desconéctate del bullicio del mundo y reconéctate contigo mismo mientras disfrutas del descanso, el mar, la arena y la diversión.
+                </p>
+                <p class="text-secondary lh-lg">
+                    Nuestras habitaciones están cuidadosamente diseñadas para capturar la sofisticación y la riqueza cultural de La Guajira. Cada detalle refleja la belleza de los atardeceres y paisajes desérticos que nos rodean.
+                </p>
+            </div>
+            <div class="col-lg-5">
+                <div class="card border-0 shadow-sm rounded-4 p-4 bg-white">
+                    <h4 class="fw-bold mb-3" style="font-family: serif; color: #332f2a;">Nuestro Hotel incluye:</h4>
+                    <ul class="list-unstyled text-secondary small lh-lg mb-0">
+                        <li><i class="bi bi-check2 text-success me-2"></i> Cama King Size</li>
+                        <li><i class="bi bi-check2 text-success me-2"></i> Aire acondicionado inverter</li>
+                        <li><i class="bi bi-check2 text-success me-2"></i> TV pantalla plana HD de 55 pulgadas</li>
+                        <li><i class="bi bi-check2 text-success me-2"></i> Terraza privada con zona de descanso</li>
+                        <li><i class="bi bi-check2 text-success me-2"></i> Jacuzzi privado frente al mar</li>
+                        <li><i class="bi bi-check2 text-success me-2"></i> Baño privado con ducha tipo lluvia</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECCIÓN DE HABITACIONES PÚBLICAS -->
+        <div id="habitaciones" class="mb-5">
+            <h3 class="fw-bold mb-4 text-center" style="font-family: serif; color: #332f2a;">Nuestras Habitaciones</h3>
+            <div class="row g-4">
+                {% for h in habitaciones %}
+                <div class="col-md-4">
+                    <div class="card border-0 shadow-sm rounded-4 overflow-hidden h-100 bg-white">
+                        <img src="{{ h.get_imagen }}" class="card-img-top" style="height: 220px; object-fit: cover;" alt="Habitación">
+                        <div class="card-body p-4 d-flex flex-column justify-content-between">
+                            <div>
+                                <h5 class="fw-bold text-dark mb-1" style="font-family: serif;">Habitación {{ h.numero }} - {{ h.tipo }}</h5>
+                                <p class="text-muted small mb-3">{{ h.descripcion|default:"Espacio exclusivo con todas las comodidades para tu estancia." }}</p>
+                            </div>
+
+                            <div class="d-flex justify-content-between align-items-center mt-3 pt-3 border-top">
+                                <span class="fw-bold text-success fs-5">${{ h.precio }} <small class="text-muted fs-6">/ noche</small></span>
+                                
+                                <!-- BOTÓN DE RESERVA SIEMPRE ACTIVO PARA SELECCIONAR FECHAS FUTURAS -->
+                                {% if not user.is_authenticated %}
+                                    <a href="{% url 'login' %}" class="btn btn-outline-secondary rounded-pill px-3 py-1" style="font-size: 0.85rem;">Iniciar Sesión para Reservar</a>
+                                {% else %}
+                                    <a href="{% url 'iniciar_reserva_web' h.id %}" class="btn text-white rounded-pill px-3 py-1 shadow-sm" style="background-color: #8c8275; font-size: 0.85rem;">Reservar ahora</a>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </main>
+
+    <!-- PIE DE PÁGINA -->
+    <footer id="contacto" class="footer-custom">
+        <div class="container text-center">
+            <h5 class="fw-bold text-white mb-2" style="font-family: serif;">¡Llámanos y haz tu reserva! Líneas de atención 321 3846918 - 312 4191129</h5>
+            <p class="text-muted small mb-4">Email: hotelbrisaslaguajira@gmail.com | Riohacha, La Guajira, Colombia.</p>
+            <p class="text-muted small mb-0">© 2026 Hotel Brisas de La Guajira. Todos los derechos reservados.</p>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

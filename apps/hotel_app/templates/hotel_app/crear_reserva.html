@@ -1,0 +1,60 @@
+{% extends 'hotel_app/base.html' %}
+
+{% block content %}
+<div class="d-flex justify-content-center align-items-center py-2">
+    <div class="card border-0 shadow-sm rounded-4 bg-white" style="max-width: 650px; width: 100%;">
+        <div class="card-body p-4 p-md-5">
+            <h3 class="fw-bold mb-4 text-dark" style="font-family: serif; letter-spacing: 0.3px;">Crear Nueva Reserva</h3>
+
+            <form method="POST">
+                {% csrf_token %}
+                {% if form.errors %}
+                    <div class="alert alert-danger" role="alert">
+                        {{ form.errors }}
+                    </div>
+                {% endif %}
+
+                <div class="mb-3">
+                    <label for="id_huesped" class="form-label fw-bold text-dark small">Huésped</label>
+                    <select name="huesped" id="id_huesped" class="form-select rounded-3 py-2" style="font-size: 0.9rem;" required>
+                        <option value="">Seleccione un huésped...</option>
+                        {% for h in huespedes %}
+                            <option value="{{ h.id }}" {% if form.data.huesped == h.id|stringformat:"s" %}selected{% endif %}>{{ h.nombres }} {{ h.apellidos }} (Doc: {{ h.numero_documento }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="mb-3">
+                    <label for="id_habitacion" class="form-label fw-bold text-dark small">Habitación Disponible</label>
+                    <select name="habitacion" id="id_habitacion" class="form-select rounded-3 py-2" style="font-size: 0.9rem;" required>
+                        <option value="">Seleccione una habitación...</option>
+                        {% for hab in habitaciones %}
+                            <option value="{{ hab.id }}" {% if form.data.habitacion == hab.id|stringformat:"s" %}selected{% endif %}>Habitación {{ hab.numero }} - {{ hab.tipo }} (${{ hab.precio }} COP)</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="row g-3 mb-4">
+                    <div class="col-md-6">
+                        <label for="id_fecha_ingreso" class="form-label fw-bold text-dark small">Fecha de Ingreso (Check-in)</label>
+                        <input type="date" name="fecha_ingreso" id="id_fecha_ingreso" value="{{ form.data.fecha_ingreso|default:'' }}" class="form-control rounded-3 py-2" style="font-size: 0.9rem;" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="id_fecha_salida" class="form-label fw-bold text-dark small">Fecha de Salida (Check-out)</label>
+                        <input type="date" name="fecha_salida" id="id_fecha_salida" value="{{ form.data.fecha_salida|default:'' }}" class="form-control rounded-3 py-2" style="font-size: 0.9rem;" required>
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-between align-items-center pt-2">
+                    <a href="{% url 'lista_reservas' %}" class="btn btn-outline-secondary rounded-pill px-4 py-2" style="font-size: 0.9rem;">
+                        Cancelar
+                    </a>
+                    <button type="submit" class="btn text-white rounded-pill px-4 py-2 shadow-sm" style="background-color: #8c8275; font-size: 0.9rem;">
+                        Guardar Reserva
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

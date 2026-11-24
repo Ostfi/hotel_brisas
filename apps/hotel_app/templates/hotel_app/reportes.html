@@ -1,0 +1,78 @@
+{% extends 'hotel_app/base.html' %}
+
+{% block content %}
+<!-- ENCABEZADO SUPERIOR -->
+<div class="d-flex justify-content-between align-items-start mb-4">
+    <div>
+        <h2 class="fw-bold text-dark mb-1" style="font-family: serif; letter-spacing: 0.5px;">PANEL DE REPORTES Y ESTADÍSTICAS</h2>
+        <p class="text-muted small mb-0">Resumen financiero, métricas de ocupación e indicadores operativos del hotel.</p>
+    </div>
+    <div>
+        <button class="btn btn-outline-secondary rounded-pill px-4 shadow-sm" onclick="window.print()" style="font-size: 0.9rem;">
+            <i class="bi bi-printer me-1"></i> Imprimir Reporte
+        </button>
+    </div>
+</div>
+
+<!-- TARJETAS DE MÉTRICAS CLAVE -->
+<div class="row g-4 mb-4">
+    <!-- Ingresos Totales -->
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm rounded-4 p-3 bg-white h-100">
+            <div class="card-body">
+                <div class="text-muted small text-uppercase fw-bold mb-1" style="font-size: 0.72rem; letter-spacing: 0.8px;">Ingresos Totales</div>
+                <h3 class="fw-bold text-success mb-0" style="font-family: serif;">${{ ingresos_totales }}</h3>
+                <small class="text-muted" style="font-size: 0.75rem;">Acumulado en pagos</small>
+            </div>
+        </div>
+    </div>
+
+    <!-- Ocupación Actual -->
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm rounded-4 p-3 bg-white h-100">
+            <div class="card-body">
+                <div class="text-muted small text-uppercase fw-bold mb-1" style="font-size: 0.72rem; letter-spacing: 0.8px;">Ocupación Actual</div>
+                <h3 class="fw-bold text-dark mb-0" style="font-family: serif;">{{ porcentaje_ocupacion }}%</h3>
+                <small class="text-muted" style="font-size: 0.75rem;">{{ habitaciones_ocupadas }} de {{ total_habitaciones }} habitaciones</small>
+            </div>
+        </div>
+    </div>
+
+    <!-- Total Reservas -->
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm rounded-4 p-3 bg-white h-100">
+            <div class="card-body">
+                <div class="text-muted small text-uppercase fw-bold mb-1" style="font-size: 0.72rem; letter-spacing: 0.8px;">Total Reservas</div>
+                <h3 class="fw-bold text-dark mb-0" style="font-family: serif;">{{ total_reservas }}</h3>
+                <small class="text-muted" style="font-size: 0.75rem;">Registros en el sistema</small>
+            </div>
+        </div>
+    </div>
+
+    <!-- Total Huéspedes -->
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm rounded-4 p-3 bg-white h-100">
+            <div class="card-body">
+                <div class="text-muted small text-uppercase fw-bold mb-1" style="font-size: 0.72rem; letter-spacing: 0.8px;">Huéspedes Registrados</div>
+                <h3 class="fw-bold text-dark mb-0" style="font-family: serif;">{{ total_huespedes }}</h3>
+                <small class="text-muted" style="font-size: 0.75rem;">Base de datos de clientes</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- SECCIÓN INFERIOR: RESUMEN GENERAL -->
+<div class="card border-0 shadow-sm rounded-4 bg-white p-4">
+    <h4 class="fw-bold text-dark mb-3" style="font-family: serif;">Estado General del Establecimiento</h4>
+    <p class="text-secondary small mb-4">El sistema se encuentra operando con normalidad. Las 20 habitaciones oficiales del Hotel Brisas de La Guajira están sincronizadas con el inventario y listas para la administración en tiempo real.</p>
+    
+    <div class="d-flex gap-3">
+        <a href="{% url 'lista_habitaciones' %}" class="btn text-white rounded-pill px-4 py-2 shadow-sm" style="background-color: #8c8275; font-size: 0.9rem;">
+            Ver Inventario de Habitaciones
+        </a>
+        <a href="{% url 'lista_reservas' %}" class="btn btn-outline-secondary rounded-pill px-4 py-2" style="font-size: 0.9rem;">
+            Ver Historial de Reservas
+        </a>
+    </div>
+</div>
+{% endblock %}

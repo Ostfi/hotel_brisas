@@ -1,0 +1,87 @@
+{% extends 'hotel_app/base.html' %}
+{% block content %}
+<div class="container py-5">
+    <div class="card border-0 shadow rounded-4 p-5 bg-white mx-auto" style="max-width: 800px;">
+        <div class="d-flex justify-content-between align-items-start border-bottom pb-4 mb-4">
+            <div>
+                <h3 class="fw-bold mb-1" style="font-family: serif;">HOTEL BRISAS DE LA GUAJIRA</h3>
+                <p class="text-muted small mb-0">Riohacha, La Guajira — Comprobante Final de Check-out</p>
+            </div>
+            <div class="text-end">
+                <span class="badge bg-dark fs-6 px-3 py-2">FACTURA #{{ reserva.id|stringformat:"05d" }}</span>
+                <p class="text-muted small mt-1 mb-0">Fecha: {% now "d/m/Y H:i" %}</p>
+            </div>
+        </div>
+
+        <div class="row mb-4">
+            <div class="col-6">
+                <h6 class="text-uppercase text-muted small fw-bold">Datos del Huésped</h6>
+                <p class="mb-0 fw-bold">{{ reserva.huesped.nombres }} {{ reserva.huesped.apellidos }}</p>
+                <p class="small text-muted mb-0">Doc: {{ reserva.huesped.numero_documento }}</p>
+                <p class="small text-muted mb-0">Tel: {{ reserva.huesped.telefono }}</p>
+            </div>
+            <div class="col-6 text-end">
+                <h6 class="text-uppercase text-muted small fw-bold">Detalle de Estancia</h6>
+                <p class="mb-0 fw-bold">Habitación {{ reserva.habitacion.numero }} ({{ reserva.habitacion.tipo }})</p>
+                <p class="small text-muted mb-0">Ingreso: {{ reserva.fecha_ingreso|date:"d/m/Y" }}</p>
+                <p class="small text-muted mb-0">Salida: {{ reserva.fecha_salida|date:"d/m/Y" }} ({{ dias }} noche{{ dias|pluralize }})</p>
+            </div>
+        </div>
+
+        <table class="table table-bordered align-middle mb-4">
+            <thead class="table-light">
+                <tr>
+                    <th>Concepto / Descripción</th>
+                    <th class="text-center">Estado</th>
+                    <th class="text-end">Valor</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>
+                        <strong>Hospedaje Habitación {{ reserva.habitacion.numero }}</strong><br>
+                        <small class="text-muted">{{ dias }} noche{{ dias|pluralize }} x ${{ reserva.habitacion.precio|floatformat:0 }} COP</small>
+                    </td>
+                    <td class="text-center"><span class="badge bg-secondary">Hospedaje</span></td>
+                    <td class="text-end fw-bold">${{ total_hospedaje|floatformat:0 }} COP</td>
+                </tr>
+
+                {% for c in consumos %}
+                <tr>
+                    <td>{{ c.descripcion_detalle }}</td>
+                    <td class="text-center">
+                        <span class="badge {% if c.estado_pago == 'Pagado' %}bg-success{% else %}bg-warning text-dark{% endif %}">
+                            {{ c.estado_pago }}
+                        </span>
+                    </td>
+                    <td class="text-end">${{ c.total|floatformat:0 }} COP</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+            <tfoot>
+                <tr>
+                    <th colspan="2" class="text-end">Total Hospedaje:</th>
+                    <td class="text-end">${{ total_hospedaje|floatformat:0 }} COP</td>
+                </tr>
+                <tr>
+                    <th colspan="2" class="text-end">Total Servicios Adicionales:</th>
+                    <td class="text-end">${{ total_servicios|floatformat:0 }} COP</td>
+                </tr>
+                <tr class="table-dark">
+                    <th colspan="2" class="text-end fs-5">TOTAL GENERAL FACTURADO:</th>
+                    <td class="text-end fs-5 fw-bold">${{ gran_total|floatformat:0 }} COP</td>
+                </tr>
+            </tfoot>
+        </table>
+
+        <div class="d-flex justify-content-between align-items-center mt-4 d-print-none">
+            <a href="{% url 'recepcion_hoy' %}" class="btn btn-outline-secondary rounded-pill px-4">
+                Volver a Recepción
+            </a>
+            <button onclick="window.print()" class="btn text-white rounded-pill px-4 fw-bold" style="background-color: #8c8275;">
+                <i class="bi bi-printer me-2"></i> Imprimir Factura
+            </button>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,63 @@
+{% extends 'hotel_app/base.html' %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card shadow-sm border-0 rounded-4">
+            <div class="card-body p-4">
+                <h3 class="fw-bold mb-3" style="font-family: serif;">Editar Habitación {{ habitacion.numero }}</h3>
+                
+                <form method="POST" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Estado de la Habitación</label>
+                        {{ form.estado }}
+                        {{ form.estado.errors }}
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Estado de Limpieza</label>
+                        {{ form.limpieza }}
+                        {{ form.limpieza.errors }}
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Mantenimiento</label>
+                        {{ form.mantenimiento }}
+                        {{ form.mantenimiento.errors }}
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">Subir una imagen</label>
+                        {{ form.imagen }}
+                        {{ form.imagen.errors }}
+                        {% if habitacion.imagen %}
+                            <img src="{{ habitacion.imagen.url }}" alt="Imagen actual de la habitación {{ habitacion.numero }}" class="img-thumbnail mt-2" style="max-height: 180px;">
+                        {% elif habitacion.imagen_url %}
+                            <img src="{{ habitacion.imagen_url }}" alt="Imagen actual de la habitación {{ habitacion.numero }}" class="img-thumbnail mt-2" style="max-height: 180px;">
+                        {% endif %}
+                        <div class="form-text">También puedes guardar una foto en <code>media/habitaciones/habitacion-{{ habitacion.numero }}.jpg</code>; se detectará automáticamente si no hay una imagen subida.</div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">{{ form.imagen_url.label }}</label>
+                        {{ form.imagen_url }}
+                        <div class="form-text">Elige una sola opción: deja vacía la URL para subir un archivo; si usarás una URL y ya hay un archivo cargado, marca la casilla para eliminarlo.</div>
+                        {{ form.imagen_url.errors }}
+                    </div>
+
+                    {% if form.non_field_errors %}
+                        <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+                    {% endif %}
+
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'lista_habitaciones' %}" class="btn btn-outline-secondary rounded-pill px-4">Cancelar</a>
+                        <button type="submit" class="btn text-white rounded-pill px-4" style="background-color: #8c8275;">Guardar Cambios</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

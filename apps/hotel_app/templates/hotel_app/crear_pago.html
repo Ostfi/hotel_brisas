@@ -1,0 +1,54 @@
+{% extends 'hotel_app/base.html' %}
+
+{% block content %}
+<div class="d-flex justify-content-center align-items-center py-2">
+    <div class="card border-0 shadow-sm rounded-4 bg-white" style="max-width: 650px; width: 100%;">
+        <div class="card-body p-4 p-md-5">
+            <!-- TÍTULO SERIF ESTILO FORMULARIO -->
+            <h3 class="fw-bold mb-4 text-dark" style="font-family: serif; letter-spacing: 0.3px;">Registrar Nuevo Pago</h3>
+
+            <form method="POST">
+                {% csrf_token %}
+                
+                <!-- SELECCIONAR RESERVA -->
+                <div class="mb-3">
+                    <label class="form-label fw-bold text-dark small">Reserva Asociada</label>
+                    {{ form.reserva }}
+                    {{ form.reserva.errors }}
+                </div>
+
+                <!-- MONTO Y MÉTODO DE PAGO -->
+                <div class="row g-3 mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold text-dark small">Monto (COP)</label>
+                        {{ form.monto }}
+                        {{ form.monto.errors }}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold text-dark small">Método de Pago</label>
+                        {{ form.metodo_pago }}
+                        {{ form.metodo_pago.errors }}
+                    </div>
+                </div>
+
+                <!-- OBSERVACIONES / COMPROBANTE -->
+                <div class="mb-4">
+                    <label class="form-label fw-bold text-dark small">Observaciones / Número de Comprobante</label>
+                    {{ form.observacion }}
+                    {{ form.observacion.errors }}
+                </div>
+
+                <!-- BOTONES DE ACCIÓN -->
+                <div class="d-flex justify-content-between align-items-center pt-2">
+                    <a href="{% url 'lista_pagos' %}" class="btn btn-outline-secondary rounded-pill px-4 py-2" style="font-size: 0.9rem;">
+                        Cancelar
+                    </a>
+                    <button type="submit" class="btn text-white rounded-pill px-4 py-2 shadow-sm" style="background-color: #8c8275; font-size: 0.9rem;">
+                        Guardar Pago
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,194 @@
+{% extends 'hotel_app/base.html' %}
+
+{% block content %}
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-start gap-3 mb-4">
+    <div>
+        <h2 class="fw-bold text-dark mb-1" style="font-family: serif; letter-spacing: 0.5px;">GESTIÓN DE RESERVAS</h2>
+        <p class="text-muted small mb-0">Control de estancias, check-in, check-out y estados de reservas del hotel.</p>
+    </div>
+    <a href="{% url 'crear_reserva' %}" class="btn text-white rounded-pill px-4 shadow-sm align-self-md-start" style="background-color: #8c8275; font-size: 0.9rem;">
+        + Nueva Reserva
+    </a>
+</div>
+
+<div class="card border-0 shadow-sm rounded-4 overflow-hidden bg-white">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0" style="font-size: 0.9rem;">
+                <thead class="bg-light text-uppercase text-muted" style="font-size: 0.72rem; letter-spacing: 0.8px;">
+                    <tr>
+                        <th scope="col" class="py-3 px-4">ID</th>
+                        <th scope="col" class="py-3">Huésped</th>
+                        <th scope="col" class="py-3">Habitación</th>
+                        <th scope="col" class="py-3">Check-in</th>
+                        <th scope="col" class="py-3">Check-out</th>
+                        <th scope="col" class="py-3">Estado</th>
+                        <th scope="col" class="py-3 text-end px-4">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for res in reservas %}
+                    <tr>
+                        <th scope="row" class="px-4 py-3 fw-bold text-dark">#{{ res.id }}</th>
+                        <td class="text-dark">{{ res.huesped.nombres }} {{ res.huesped.apellidos }}</td>
+                        <td class="text-secondary">Hab. {{ res.habitacion.numero }} ({{ res.habitacion.tipo }})</td>
+                        <td class="text-secondary text-nowrap">{{ res.fecha_ingreso|date:"d/m/Y" }}</td>
+                        <td class="text-secondary text-nowrap">{{ res.fecha_salida|date:"d/m/Y" }}</td>
+                        <td>
+                            <span class="badge rounded-pill px-3 py-1 fw-normal
+                                {% if res.estado == 'Confirmada' %}bg-success-subtle text-success
+                                {% elif res.estado == 'Pendiente' %}bg-warning-subtle text-warning
+                                {% elif res.estado == 'Cancelada' %}bg-danger-subtle text-danger
+                                {% elif res.estado == 'En curso' %}bg-primary-subtle text-primary
+                                {% else %}bg-secondary-subtle text-secondary{% endif %}"
+                                style="font-size: 0.75rem;">
+                                {{ res.estado }}
+                            </span>
+                        </td>
+                        <td class="text-end text-nowrap px-4">
+                            {% if res.estado == 'Confirmada' %}
+                            {% if res.habitacion.capacidad > 1 %}
+                            <a href="{% url 'realizar_checkin' res.id %}" class="btn btn-outline-success btn-sm rounded-pill px-3 py-1 me-2">Registrar huéspedes y Check-in</a>
+                            {% else %}
+                            <form method="post" action="{% url 'realizar_checkin' res.id %}" class="d-inline" onsubmit="return confirm('¿Confirmar el ingreso del huésped y hacer Check-in?');">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-outline-success btn-sm rounded-pill px-3 py-1 me-2">Check-in</button>
+                            </form>
+                            {% endif %}
+                            <form method="post" action="{% url 'cancelar_reserva_personal' res.id %}" class="d-inline" onsubmit="return confirm('¿Deseas cancelar esta reserva? La habitación quedará disponible y se registrará el reembolso.');">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-outline-danger btn-sm rounded-pill px-3 py-1 me-2">Cancelar</button>
+                            </form>
+                            {% elif res.estado == 'En curso' %}
+                            {% if res.saldo_pendiente > 0 or res.total_servicios_pendientes > 0 %}
+                            <button type="button" class="btn btn-outline-warning btn-sm rounded-pill px-3 py-1 me-2"
+                                data-bs-toggle="modal" data-bs-target="#modalCheckout{{ res.id }}">
+                                Revisar pagos y Check-out
+                            </button>
+                            {% else %}
+                            <form method="post" action="{% url 'realizar_checkout' res.id %}" class="d-inline" onsubmit="return confirm('¿Confirmar salida y hacer Check-out?');">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-outline-primary btn-sm rounded-pill px-3 py-1 me-2">Check-out</button>
+                            </form>
+                            {% endif %}
+                            {% endif %}
+                            <button type="button" class="btn btn-link text-decoration-none fw-medium p-0"
+                                style="color: #8c8275; font-size: 0.88rem;"
+                                data-bs-toggle="modal" data-bs-target="#modalReserva{{ res.id }}"
+                                aria-label="Ver detalle de la reserva {{ res.id }}">
+                                Ver detalle
+                            </button>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="text-center text-muted py-5">
+                            <i class="bi bi-calendar-x fs-3 d-block mb-2" aria-hidden="true"></i>
+                            No hay reservas registradas en el sistema.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+{% for res in reservas %}
+<div class="modal fade" id="modalReserva{{ res.id }}" tabindex="-1"
+    aria-labelledby="modalReservaTitulo{{ res.id }}" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content border-0 shadow rounded-4">
+            <div class="modal-header border-0 pb-0">
+                <h5 id="modalReservaTitulo{{ res.id }}" class="fw-bold text-dark mb-0" style="font-family: serif;">
+                    Detalles de la Reserva #{{ res.id }}
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body py-4">
+                <section class="bg-light p-3 rounded-3 mb-3" aria-label="Información del huésped">
+                    <h6 class="fw-bold text-dark mb-2"><i class="bi bi-person-badge me-2" aria-hidden="true"></i>Huésped</h6>
+                    <p class="mb-1 small text-secondary"><strong>Nombre:</strong> {{ res.huesped.nombres }} {{ res.huesped.apellidos }}</p>
+                    <p class="mb-1 small text-secondary"><strong>Documento:</strong> {{ res.huesped.get_tipo_documento_display }} - {{ res.huesped.numero_documento }}</p>
+                    <p class="mb-1 small text-secondary"><strong>Teléfono:</strong> {{ res.huesped.telefono }}</p>
+                    <p class="mb-0 small text-secondary"><strong>Correo:</strong> {{ res.huesped.correo }}</p>
+                </section>
+
+                <section class="bg-light p-3 rounded-3 mb-3" aria-label="Información de la habitación">
+                    <h6 class="fw-bold text-dark mb-2"><i class="bi bi-door-open me-2" aria-hidden="true"></i>Habitación</h6>
+                    <p class="mb-1 small text-secondary"><strong>Número y tipo:</strong> {{ res.habitacion.numero }} - {{ res.habitacion.tipo }}</p>
+                    <p class="mb-0 small text-secondary"><strong>Tarifa por noche:</strong> ${{ res.habitacion.precio }} COP</p>
+                </section>
+
+                <section class="bg-light p-3 rounded-3" aria-label="Fechas y estado de la reserva">
+                    <h6 class="fw-bold text-dark mb-2"><i class="bi bi-calendar-range me-2" aria-hidden="true"></i>Estancia</h6>
+                    <p class="mb-1 small text-secondary"><strong>Check-in:</strong> {{ res.fecha_ingreso|date:"d/m/Y" }}</p>
+                    <p class="mb-1 small text-secondary"><strong>Check-out:</strong> {{ res.fecha_salida|date:"d/m/Y" }}</p>
+                    <p class="mb-0 small text-secondary"><strong>Estado:</strong> {{ res.estado }}</p>
+                    {% if res.cantidad_huespedes %}
+                    <p class="mb-0 mt-1 small text-secondary"><strong>Huéspedes:</strong> {{ res.cantidad_huespedes }}</p>
+                    {% endif %}
+                    {% if res.solicitudes_especiales %}
+                    <p class="mb-0 mt-1 small text-secondary"><strong>Solicitudes:</strong> {{ res.solicitudes_especiales|linebreaksbr }}</p>
+                    {% endif %}
+                </section>
+            </div>
+            <div class="modal-footer border-0 pt-0">
+                <button type="button" class="btn btn-outline-secondary rounded-pill px-4" data-bs-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+{% for res in reservas %}
+{% if res.estado == 'En curso' and res.total_pendiente_checkout > 0 %}
+<div class="modal fade" id="modalCheckout{{ res.id }}" tabindex="-1"
+    aria-labelledby="modalCheckoutTitulo{{ res.id }}" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow rounded-4">
+            <form method="post" action="{% url 'realizar_checkout' res.id %}">
+                {% csrf_token %}
+                <div class="modal-header border-0">
+                    <h5 id="modalCheckoutTitulo{{ res.id }}" class="modal-title fw-bold">Pagos pendientes antes del Check-out</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-warning">
+                        Confirma el pago pendiente antes de finalizar la estancia:
+                    </div>
+                    <ul class="mb-3">
+                        {% if res.saldo_pendiente > 0 %}
+                        <li>Saldo de hospedaje: <strong>${{ res.saldo_pendiente|floatformat:0 }} COP</strong></li>
+                        {% endif %}
+                        {% if res.total_servicios_pendientes > 0 %}
+                        <li>Servicios pendientes: <strong>${{ res.total_servicios_pendientes|floatformat:0 }} COP</strong></li>
+                        {% endif %}
+                    </ul>
+                    <p class="fw-semibold">Total por confirmar: ${{ res.total_pendiente_checkout|floatformat:0 }} COP</p>
+                    <label class="form-label fw-semibold" for="metodoPagoCheckout{{ res.id }}">Método de pago recibido</label>
+                    <select class="form-select" id="metodoPagoCheckout{{ res.id }}" name="metodo_pago" required>
+                        <option value="">Selecciona un método...</option>
+                        {% for codigo, nombre in metodos_pago %}
+                        <option value="{{ codigo }}">{{ nombre }}</option>
+                        {% endfor %}
+                    </select>
+                    <div class="form-check mt-3">
+                        <input class="form-check-input" type="checkbox" id="confirmarPagoCheckout{{ res.id }}"
+                            name="confirmar_pagos_pendientes" required>
+                        <label class="form-check-label" for="confirmarPagoCheckout{{ res.id }}">
+                            Confirmo que el huésped pagó el total pendiente indicado.
+                        </label>
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-outline-secondary rounded-pill" data-bs-dismiss="modal">Volver</button>
+                    <button type="submit" class="btn btn-primary rounded-pill">Confirmar pago y Check-out</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endfor %}
+{% endblock %}

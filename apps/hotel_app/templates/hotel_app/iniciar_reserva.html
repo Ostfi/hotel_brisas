@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fechas de reserva - Hotel Brisas</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <style>
+        body { background: #f5f5f3; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        .btn-hotel { background: #8c8275; color: #fff; }
+        .btn-hotel:hover { background: #7a7064; color: #fff; }
+    </style>
+</head>
+<body>
+    <nav class="navbar bg-white border-bottom px-4 py-3 shadow-sm">
+        <div class="container"><a class="navbar-brand fw-bold text-dark" href="{% url 'mis_reservas_cliente' %}">BRISAS RESORT</a></div>
+    </nav>
+    <main class="container py-5">
+        <div class="d-flex justify-content-center gap-2 mb-4 text-center small">
+            <span class="badge rounded-pill text-bg-dark px-3 py-2">1. Fechas</span>
+            <span class="badge rounded-pill text-bg-light text-secondary px-3 py-2">2. Tus datos</span>
+            <span class="badge rounded-pill text-bg-light text-secondary px-3 py-2">3. Pago</span>
+            <span class="badge rounded-pill text-bg-light text-secondary px-3 py-2">4. Confirmación</span>
+        </div>
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+                    <img src="{{ habitacion.get_imagen }}" alt="Habitación {{ habitacion.numero }}" style="height: 230px; object-fit: cover;">
+                    <div class="card-body p-4 p-md-5">
+                        <p class="text-uppercase small text-muted mb-1">Habitación {{ habitacion.numero }} · {{ habitacion.tipo }}</p>
+                        <h1 class="h3 fw-bold mb-2" style="font-family: Georgia, serif;">Elige las fechas de tu estadía</h1>
+                        <p class="text-muted mb-4">Desde ${{ habitacion.precio }} COP por noche · Capacidad máxima: {{ habitacion.capacidad }} huéspedes</p>
+                        {% if messages %}
+                            {% for message in messages %}<div class="alert alert-warning">{{ message }}</div>{% endfor %}
+                        {% endif %}
+                        <form method="post" novalidate>
+                            {% csrf_token %}
+                            {% for field in form %}
+                                <div class="mb-3">
+                                    <label class="form-label fw-semibold" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                                    {% if field.name == 'fecha_ingreso' %}
+                                        <input type="date" name="{{ field.name }}" id="{{ field.id_for_label }}" class="form-control rounded-3 py-2" min="{{ fecha_minima }}" value="{{ field.value|default:'' }}" required>
+                                    {% elif field.name == 'fecha_salida' %}
+                                        <input type="date" name="{{ field.name }}" id="{{ field.id_for_label }}" class="form-control rounded-3 py-2" min="{{ fecha_minima }}" value="{{ field.value|default:'' }}" required>
+                                    {% else %}
+                                        {{ field }}
+                                    {% endif %}
+                                    {% for error in field.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
+                                </div>
+                            {% endfor %}
+                            {% for error in form.non_field_errors %}<div class="alert alert-danger">{{ error }}</div>{% endfor %}
+                            <div class="d-flex flex-column flex-sm-row justify-content-between gap-2 mt-4">
+                                <a href="{% url 'mis_reservas_cliente' %}" class="btn btn-outline-secondary rounded-pill px-4">Volver a habitaciones</a>
+                                <button type="submit" class="btn btn-hotel rounded-pill px-4">Continuar a mis datos <i class="bi bi-arrow-right ms-1"></i></button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+    <script>
+        const ingreso = document.getElementById('id_fecha_ingreso');
+        const salida = document.getElementById('id_fecha_salida');
+        ingreso.addEventListener('change', () => {
+            salida.min = ingreso.value || salida.dataset.minima;
+            if (salida.value && salida.value <= ingreso.value) salida.value = '';
+        });
+        salida.dataset.minima = salida.min;
+    </script>
+</body>
+</html>

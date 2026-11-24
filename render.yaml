@@ -1,0 +1,42 @@
+databases:
+  - name: hotel-brisas-db
+    databaseName: hotel_brisas_db
+    user: hotel_brisas_user
+    plan: free
+
+services:
+  - type: web
+    name: hotel-brisas
+    env: python
+    plan: free
+    buildCommand: |
+      pip install -r requirements.txt
+      python manage.py collectstatic --noinput
+    startCommand: python manage.py migrate --noinput && gunicorn hotel_brisas.wsgi:application --bind 0.0.0.0:$PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.10.12
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DEBUG
+        value: "False"
+      - key: ALLOWED_HOSTS
+        value: .onrender.com
+      - key: DATABASE_URL
+        fromDatabase:
+          name: hotel-brisas-db
+          property: connectionString
+      - key: EMAIL_HOST
+        value: smtp.gmail.com
+      - key: EMAIL_PORT
+        value: "587"
+      - key: EMAIL_USE_TLS
+        value: "True"
+      - key: EMAIL_HOST_USER
+        value: ostwaldjoel09@gmail.com
+      - key: DEFAULT_FROM_EMAIL
+        value: ostwaldjoel09@gmail.com
+      - key: HOTEL_NOTIFICATION_EMAIL
+        value: ostwaldjoel09@gmail.com
+      - key: EMAIL_HOST_PASSWORD
+        sync: false
