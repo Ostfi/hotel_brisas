@@ -1,12 +1,15 @@
 from io import BytesIO
+import json
 from datetime import timedelta
 from decimal import Decimal
 from pathlib import Path
+from smtplib import SMTPException
 from tempfile import TemporaryDirectory
 from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
+from django.core.mail import EmailMessage
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.http import HttpResponse
 from django.test import RequestFactory, SimpleTestCase, TestCase, override_settings
@@ -19,6 +22,7 @@ from apps.hotel_app.forms import (
     HabitacionEdicionForm,
     HuespedForm,
 )
+from apps.hotel_app.email_backend import BrevoEmailBackend
 from apps.hotel_app.models import (
     ConsumoHabitacion,
     Habitacion,
@@ -28,6 +32,49 @@ from apps.hotel_app.models import (
     ServicioAdicional,
     TransaccionPago,
 )
+
+
+class BrevoEmailBackendTests(SimpleTestCase):
+    @override_settings(BREVO_API_KEY='test-api-key', EMAIL_TIMEOUT=8)
+    @patch('apps.hotel_app.email_backend.urlopen')
+    def test_sends_plain_text_email_through_brevo_api(self, urlopen_mock):
+        urlopen_mock.return_value.__enter__.return_value.status = 201
+        backend = BrevoEmailBackend()
+        message = EmailMessage(
+            'Aviso del hotel',
+            'Tu reserva fue confirmada.',
+            'Hotel Brisas <reservas@example.com>',
+            ['Huésped <guest@example.com>'],
+        )
+
+        sent = backend.send_messages([message])
+
+        self.assertEqual(sent, 1)
+        request = urlopen_mock.call_args.args[0]
+        self.assertEqual(request.full_url, backend.api_url)
+        self.assertEqual(request.get_header('Api-key'), 'test-api-key')
+        self.assertEqual(
+            json.loads(request.data),
+            {
+                'sender': {
+                    'email': 'reservas@example.com',
+                    'name': 'Hotel Brisas',
+                },
+                'to': [
+                    {'email': 'guest@example.com', 'name': 'Huésped'},
+                ],
+                'subject': 'Aviso del hotel',
+                'textContent': 'Tu reserva fue confirmada.',
+            },
+        )
+        urlopen_mock.assert_called_once_with(request, timeout=8)
+
+    @override_settings(BREVO_API_KEY='')
+    def test_reports_missing_brevo_api_key(self):
+        with self.assertRaisesMessage(SMTPException, 'BREVO_API_KEY'):
+            BrevoEmailBackend().send_messages([
+                EmailMessage('Aviso', 'Texto', 'hotel@example.com', ['guest@example.com']),
+            ])
 
 
 class HabitacionEdicionFormTests(SimpleTestCase):

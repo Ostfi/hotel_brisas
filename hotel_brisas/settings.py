@@ -38,25 +38,12 @@ if RENDER_EXTERNAL_HOSTNAME:
     ALLOWED_HOSTS.append (RENDER_EXTERNAL_HOSTNAME)
 
 
-# Correo electrónico
-EMAIL_HOST = os.environ.get('EMAIL_HOST', '')
-EMAIL_BACKEND = (
-    'django.core.mail.backends.smtp.EmailBackend'
-    if EMAIL_HOST
-    else 'django.core.mail.backends.console.EmailBackend'
-)
-EMAIL_PORT = int(os.environ.get('EMAIL_PORT', '587'))
-EMAIL_USE_TLS = os.environ.get('EMAIL_USE_TLS', 'True').lower() in {
-    'true',
-    '1',
-    'yes',
-}
-EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', '')
-EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
+EMAIL_BACKEND = 'apps.hotel_app.email_backend.BrevoEmailBackend'
+BREVO_API_KEY = os.environ.get('BREVO_API_KEY', '')
 EMAIL_TIMEOUT = int(os.environ.get('EMAIL_TIMEOUT', '15'))
 DEFAULT_FROM_EMAIL = os.environ.get(
     'DEFAULT_FROM_EMAIL',
-    EMAIL_HOST_USER or 'reservas@brisaslaguajira.com',
+    'ostwaldjoel09@gmail.com',
 )
 HOTEL_NOTIFICATION_EMAIL = os.environ.get(
     'HOTEL_NOTIFICATION_EMAIL',
