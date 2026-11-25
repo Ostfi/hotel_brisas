@@ -73,8 +73,20 @@ class BrevoEmailBackend(BaseEmailBackend):
                         f'Brevo rechazó el correo con HTTP {response.status}.',
                     )
         except HTTPError as error:
+            try:
+                error_data = json.loads(error.read().decode('utf-8'))
+            except (UnicodeDecodeError, json.JSONDecodeError):
+                error_data = None
+
+            details = []
+            if isinstance(error_data, dict):
+                for field in ('code', 'message'):
+                    value = error_data.get(field)
+                    if isinstance(value, str) and value.strip():
+                        details.append(value.strip().replace(api_key, '[oculta]'))
+            detail = f" ({': '.join(details)[:300]})" if details else ''
             raise SMTPException(
-                f'Brevo rechazó el correo con HTTP {error.code}.',
+                f'Brevo rechazó el correo con HTTP {error.code}{detail}.',
             ) from error
 
     @classmethod

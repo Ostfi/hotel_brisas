@@ -6,6 +6,7 @@ from pathlib import Path
 from smtplib import SMTPException
 from tempfile import TemporaryDirectory
 from unittest.mock import patch
+from urllib.error import HTTPError
 
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
@@ -75,6 +76,35 @@ class BrevoEmailBackendTests(SimpleTestCase):
             BrevoEmailBackend().send_messages([
                 EmailMessage('Aviso', 'Texto', 'hotel@example.com', ['guest@example.com']),
             ])
+
+    @override_settings(BREVO_API_KEY='test-api-key', EMAIL_TIMEOUT=8)
+    @patch('apps.hotel_app.email_backend.urlopen')
+    def test_includes_brevo_error_details_without_logging_api_key(self, urlopen_mock):
+        error_body = json.dumps({
+            'code': 'unauthorized',
+            'message': 'Invalid API key: test-api-key',
+        }).encode('utf-8')
+        urlopen_mock.side_effect = HTTPError(
+            'https://api.brevo.com/v3/smtp/email',
+            401,
+            'Unauthorized',
+            {},
+            BytesIO(error_body),
+        )
+        message = EmailMessage(
+            'Aviso',
+            'Texto',
+            'hotel@example.com',
+            ['guest@example.com'],
+        )
+
+        with self.assertRaises(SMTPException) as context:
+            BrevoEmailBackend().send_messages([message])
+
+        self.assertIn('HTTP 401', str(context.exception))
+        self.assertIn('unauthorized', str(context.exception))
+        self.assertIn('Invalid API key: [oculta]', str(context.exception))
+        self.assertNotIn('test-api-key', str(context.exception))
 
 
 class HabitacionEdicionFormTests(SimpleTestCase):
