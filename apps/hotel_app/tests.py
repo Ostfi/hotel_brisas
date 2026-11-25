@@ -1,12 +1,16 @@
+import base64
 from io import BytesIO
 import json
+from email import message_from_bytes
+from email.header import decode_header, make_header
 from datetime import timedelta
 from decimal import Decimal
 from pathlib import Path
 from smtplib import SMTPException
 from tempfile import TemporaryDirectory
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 from urllib.error import HTTPError
+from urllib.parse import parse_qs
 
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
@@ -23,7 +27,7 @@ from apps.hotel_app.forms import (
     HabitacionEdicionForm,
     HuespedForm,
 )
-from apps.hotel_app.email_backend import BrevoEmailBackend
+from apps.hotel_app.email_backend import GmailAPIEmailBackend
 from apps.hotel_app.models import (
     ConsumoHabitacion,
     Habitacion,
@@ -35,93 +39,116 @@ from apps.hotel_app.models import (
 )
 
 
-class BrevoEmailBackendTests(SimpleTestCase):
-    @override_settings(BREVO_API_KEY='test-api-key', EMAIL_TIMEOUT=8)
+class GmailAPIEmailBackendTests(SimpleTestCase):
+    @override_settings(
+        GMAIL_CLIENT_ID='client-id',
+        GMAIL_CLIENT_SECRET='client-secret',
+        GMAIL_REFRESH_TOKEN='refresh-token',
+        EMAIL_TIMEOUT=8,
+    )
     @patch('apps.hotel_app.email_backend.urlopen')
-    def test_sends_plain_text_email_through_brevo_api(self, urlopen_mock):
-        urlopen_mock.return_value.__enter__.return_value.status = 201
-        backend = BrevoEmailBackend()
-        message = EmailMessage(
-            'Aviso del hotel',
-            'Tu reserva fue confirmada.',
-            'Hotel Brisas <reservas@example.com>',
-            ['Huésped <guest@example.com>'],
+    def test_sends_email_using_gmail_api_and_oauth_refresh_token(self, urlopen_mock):
+        token_response = MagicMock()
+        token_response.__enter__.return_value.read.return_value = (
+            b'{"access_token":"access-token"}'
         )
-
-        sent = backend.send_messages([message])
-
-        self.assertEqual(sent, 1)
-        request = urlopen_mock.call_args.args[0]
-        self.assertEqual(request.full_url, backend.api_url)
-        self.assertEqual(request.get_header('Api-key'), 'test-api-key')
-        self.assertEqual(
-            json.loads(request.data),
-            {
-                'sender': {
-                    'email': 'reservas@example.com',
-                    'name': 'Hotel Brisas',
-                },
-                'to': [
-                    {'email': 'guest@example.com', 'name': 'Huésped'},
-                ],
-                'subject': 'Aviso del hotel',
-                'textContent': 'Tu reserva fue confirmada.',
-            },
-        )
-        urlopen_mock.assert_called_once_with(request, timeout=8)
-
-    @override_settings(BREVO_API_KEY='')
-    def test_reports_missing_brevo_api_key(self):
-        with self.assertRaisesMessage(SMTPException, 'BREVO_API_KEY'):
-            BrevoEmailBackend().send_messages([
-                EmailMessage('Aviso', 'Texto', 'hotel@example.com', ['guest@example.com']),
-            ])
-
-    @override_settings(BREVO_API_KEY=' test-api-key \n', EMAIL_TIMEOUT=8)
-    @patch('apps.hotel_app.email_backend.urlopen')
-    def test_strips_whitespace_from_brevo_api_key(self, urlopen_mock):
-        urlopen_mock.return_value.__enter__.return_value.status = 201
+        send_response = MagicMock()
+        send_response.__enter__.return_value.status = 200
+        urlopen_mock.side_effect = [token_response, send_response]
         message = EmailMessage(
-            'Aviso',
-            'Texto',
-            'hotel@example.com',
+            'Recuperación',
+            'Tu código es 123456.',
+            'Hotel Brisas <ostwaldjoel09@gmail.com>',
             ['guest@example.com'],
         )
 
-        sent = BrevoEmailBackend().send_messages([message])
+        sent = GmailAPIEmailBackend().send_messages([message])
 
         self.assertEqual(sent, 1)
-        request = urlopen_mock.call_args.args[0]
-        self.assertEqual(request.get_header('Api-key'), 'test-api-key')
-
-    @override_settings(BREVO_API_KEY='test-api-key', EMAIL_TIMEOUT=8)
-    @patch('apps.hotel_app.email_backend.urlopen')
-    def test_includes_brevo_error_details_without_logging_api_key(self, urlopen_mock):
-        error_body = json.dumps({
-            'code': 'unauthorized',
-            'message': 'Invalid API key: test-api-key',
-        }).encode('utf-8')
-        urlopen_mock.side_effect = HTTPError(
-            'https://api.brevo.com/v3/smtp/email',
-            401,
-            'Unauthorized',
-            {},
-            BytesIO(error_body),
+        token_request, send_request = (
+            call.args[0] for call in urlopen_mock.call_args_list
         )
+        self.assertEqual(token_request.full_url, GmailAPIEmailBackend.token_url)
+        self.assertEqual(
+            parse_qs(token_request.data.decode('utf-8')),
+            {
+                'client_id': ['client-id'],
+                'client_secret': ['client-secret'],
+                'refresh_token': ['refresh-token'],
+                'grant_type': ['refresh_token'],
+            },
+        )
+        self.assertEqual(send_request.full_url, GmailAPIEmailBackend.send_url)
+        self.assertEqual(
+            send_request.get_header('Authorization'),
+            'Bearer access-token',
+        )
+        raw_message = json.loads(send_request.data)['raw']
+        decoded_message = base64.urlsafe_b64decode(
+            raw_message + '=' * (-len(raw_message) % 4),
+        )
+        parsed_message = message_from_bytes(decoded_message)
+        self.assertEqual(
+            str(make_header(decode_header(parsed_message['Subject']))),
+            'Recuperación',
+        )
+        self.assertEqual(parsed_message['To'], 'guest@example.com')
+
+    @override_settings(
+        GMAIL_CLIENT_ID='',
+        GMAIL_CLIENT_SECRET='',
+        GMAIL_REFRESH_TOKEN='',
+    )
+    def test_reports_missing_gmail_oauth_credentials(self):
+        with self.assertRaisesMessage(SMTPException, 'GMAIL_CLIENT_ID'):
+            GmailAPIEmailBackend().send_messages([
+                EmailMessage('Aviso', 'Texto', 'hotel@gmail.com', ['guest@example.com']),
+            ])
+
+    @override_settings(
+        GMAIL_CLIENT_ID='client-id',
+        GMAIL_CLIENT_SECRET='client-secret',
+        GMAIL_REFRESH_TOKEN='refresh-token',
+        EMAIL_TIMEOUT=8,
+    )
+    @patch('apps.hotel_app.email_backend.urlopen')
+    def test_redacts_oauth_secrets_from_gmail_api_errors(self, urlopen_mock):
+        token_response = MagicMock()
+        token_response.__enter__.return_value.read.return_value = (
+            b'{"access_token":"access-token"}'
+        )
+        error_body = json.dumps({
+            'error': {
+                'status': 'UNAUTHENTICATED',
+                'message': (
+                    'Credentials client-secret refresh-token access-token rejected'
+                ),
+            },
+        }).encode('utf-8')
+        urlopen_mock.side_effect = [
+            token_response,
+            HTTPError(
+                GmailAPIEmailBackend.send_url,
+                401,
+                'Unauthorized',
+                {},
+                BytesIO(error_body),
+            ),
+        ]
         message = EmailMessage(
             'Aviso',
             'Texto',
-            'hotel@example.com',
+            'hotel@gmail.com',
             ['guest@example.com'],
         )
 
         with self.assertRaises(SMTPException) as context:
-            BrevoEmailBackend().send_messages([message])
+            GmailAPIEmailBackend().send_messages([message])
 
-        self.assertIn('HTTP 401', str(context.exception))
-        self.assertIn('unauthorized', str(context.exception))
-        self.assertIn('Invalid API key: [oculta]', str(context.exception))
-        self.assertNotIn('test-api-key', str(context.exception))
+        error_message = str(context.exception)
+        self.assertIn('HTTP 401', error_message)
+        for secret in ('client-secret', 'refresh-token', 'access-token'):
+            self.assertNotIn(secret, error_message)
 
 
 class HabitacionEdicionFormTests(SimpleTestCase):

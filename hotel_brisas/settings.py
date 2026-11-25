@@ -38,8 +38,10 @@ if RENDER_EXTERNAL_HOSTNAME:
     ALLOWED_HOSTS.append (RENDER_EXTERNAL_HOSTNAME)
 
 
-EMAIL_BACKEND = 'apps.hotel_app.email_backend.BrevoEmailBackend'
-BREVO_API_KEY = os.environ.get('BREVO_API_KEY', '')
+EMAIL_BACKEND = 'apps.hotel_app.email_backend.GmailAPIEmailBackend'
+GMAIL_CLIENT_ID = os.environ.get('GMAIL_CLIENT_ID', '')
+GMAIL_CLIENT_SECRET = os.environ.get('GMAIL_CLIENT_SECRET', '')
+GMAIL_REFRESH_TOKEN = os.environ.get('GMAIL_REFRESH_TOKEN', '')
 EMAIL_TIMEOUT = int(os.environ.get('EMAIL_TIMEOUT', '15'))
 DEFAULT_FROM_EMAIL = os.environ.get(
     'DEFAULT_FROM_EMAIL',
