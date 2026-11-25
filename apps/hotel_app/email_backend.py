@@ -15,7 +15,7 @@ class BrevoEmailBackend(BaseEmailBackend):
         if not email_messages:
             return 0
 
-        api_key = settings.BREVO_API_KEY
+        api_key = settings.BREVO_API_KEY.strip()
         if not api_key:
             if self.fail_silently:
                 return 0

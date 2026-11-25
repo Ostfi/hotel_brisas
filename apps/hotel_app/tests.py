@@ -77,6 +77,23 @@ class BrevoEmailBackendTests(SimpleTestCase):
                 EmailMessage('Aviso', 'Texto', 'hotel@example.com', ['guest@example.com']),
             ])
 
+    @override_settings(BREVO_API_KEY=' test-api-key \n', EMAIL_TIMEOUT=8)
+    @patch('apps.hotel_app.email_backend.urlopen')
+    def test_strips_whitespace_from_brevo_api_key(self, urlopen_mock):
+        urlopen_mock.return_value.__enter__.return_value.status = 201
+        message = EmailMessage(
+            'Aviso',
+            'Texto',
+            'hotel@example.com',
+            ['guest@example.com'],
+        )
+
+        sent = BrevoEmailBackend().send_messages([message])
+
+        self.assertEqual(sent, 1)
+        request = urlopen_mock.call_args.args[0]
+        self.assertEqual(request.get_header('Api-key'), 'test-api-key')
+
     @override_settings(BREVO_API_KEY='test-api-key', EMAIL_TIMEOUT=8)
     @patch('apps.hotel_app.email_backend.urlopen')
     def test_includes_brevo_error_details_without_logging_api_key(self, urlopen_mock):
