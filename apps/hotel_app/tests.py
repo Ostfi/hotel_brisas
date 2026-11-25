@@ -1,8 +1,5 @@
-import base64
 from io import BytesIO
 import json
-from email import message_from_bytes
-from email.header import decode_header, make_header
 from datetime import timedelta
 from decimal import Decimal
 from pathlib import Path
@@ -10,7 +7,6 @@ from smtplib import SMTPException
 from tempfile import TemporaryDirectory
 from unittest.mock import MagicMock, patch
 from urllib.error import HTTPError
-from urllib.parse import parse_qs
 
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
@@ -22,12 +18,12 @@ from django.urls import resolve, reverse
 from django.utils import timezone
 from PIL import Image
 
+from apps.hotel_app.email_backend import GmailAppsScriptEmailBackend
 from apps.hotel_app.forms import (
     CheckinAcompananteForm,
     HabitacionEdicionForm,
     HuespedForm,
 )
-from apps.hotel_app.email_backend import GmailAPIEmailBackend
 from apps.hotel_app.models import (
     ConsumoHabitacion,
     Habitacion,
@@ -39,22 +35,17 @@ from apps.hotel_app.models import (
 )
 
 
-class GmailAPIEmailBackendTests(SimpleTestCase):
+class GmailAppsScriptEmailBackendTests(SimpleTestCase):
     @override_settings(
-        GMAIL_CLIENT_ID='client-id',
-        GMAIL_CLIENT_SECRET='client-secret',
-        GMAIL_REFRESH_TOKEN='refresh-token',
+        GMAIL_RELAY_URL='https://script.google.com/macros/s/test-id/exec',
+        GMAIL_RELAY_TOKEN='relay-token',
         EMAIL_TIMEOUT=8,
     )
     @patch('apps.hotel_app.email_backend.urlopen')
-    def test_sends_email_using_gmail_api_and_oauth_refresh_token(self, urlopen_mock):
-        token_response = MagicMock()
-        token_response.__enter__.return_value.read.return_value = (
-            b'{"access_token":"access-token"}'
-        )
-        send_response = MagicMock()
-        send_response.__enter__.return_value.status = 200
-        urlopen_mock.side_effect = [token_response, send_response]
+    def test_sends_email_through_apps_script_relay(self, urlopen_mock):
+        response = MagicMock()
+        response.__enter__.return_value.read.return_value = b'{"ok":true}'
+        urlopen_mock.return_value = response
         message = EmailMessage(
             'Recuperación',
             'Tu código es 123456.',
@@ -62,79 +53,49 @@ class GmailAPIEmailBackendTests(SimpleTestCase):
             ['guest@example.com'],
         )
 
-        sent = GmailAPIEmailBackend().send_messages([message])
+        sent = GmailAppsScriptEmailBackend().send_messages([message])
 
         self.assertEqual(sent, 1)
-        token_request, send_request = (
-            call.args[0] for call in urlopen_mock.call_args_list
-        )
-        self.assertEqual(token_request.full_url, GmailAPIEmailBackend.token_url)
+        request = urlopen_mock.call_args.args[0]
         self.assertEqual(
-            parse_qs(token_request.data.decode('utf-8')),
+            request.full_url,
+            'https://script.google.com/macros/s/test-id/exec',
+        )
+        self.assertEqual(
+            json.loads(request.data.decode('utf-8')),
             {
-                'client_id': ['client-id'],
-                'client_secret': ['client-secret'],
-                'refresh_token': ['refresh-token'],
-                'grant_type': ['refresh_token'],
+                'token': 'relay-token',
+                'to': ['guest@example.com'],
+                'subject': 'Recuperación',
+                'body': 'Tu código es 123456.',
             },
         )
-        self.assertEqual(send_request.full_url, GmailAPIEmailBackend.send_url)
-        self.assertEqual(
-            send_request.get_header('Authorization'),
-            'Bearer access-token',
-        )
-        raw_message = json.loads(send_request.data)['raw']
-        decoded_message = base64.urlsafe_b64decode(
-            raw_message + '=' * (-len(raw_message) % 4),
-        )
-        parsed_message = message_from_bytes(decoded_message)
-        self.assertEqual(
-            str(make_header(decode_header(parsed_message['Subject']))),
-            'Recuperación',
-        )
-        self.assertEqual(parsed_message['To'], 'guest@example.com')
 
     @override_settings(
-        GMAIL_CLIENT_ID='',
-        GMAIL_CLIENT_SECRET='',
-        GMAIL_REFRESH_TOKEN='',
+        GMAIL_RELAY_URL='',
+        GMAIL_RELAY_TOKEN='',
     )
-    def test_reports_missing_gmail_oauth_credentials(self):
-        with self.assertRaisesMessage(SMTPException, 'GMAIL_CLIENT_ID'):
-            GmailAPIEmailBackend().send_messages([
+    def test_reports_missing_relay_configuration(self):
+        with self.assertRaisesMessage(SMTPException, 'GMAIL_RELAY_URL'):
+            GmailAppsScriptEmailBackend().send_messages([
                 EmailMessage('Aviso', 'Texto', 'hotel@gmail.com', ['guest@example.com']),
             ])
 
     @override_settings(
-        GMAIL_CLIENT_ID='client-id',
-        GMAIL_CLIENT_SECRET='client-secret',
-        GMAIL_REFRESH_TOKEN='refresh-token',
+        GMAIL_RELAY_URL='https://script.google.com/macros/s/test-id/exec',
+        GMAIL_RELAY_TOKEN='relay-token',
         EMAIL_TIMEOUT=8,
     )
     @patch('apps.hotel_app.email_backend.urlopen')
-    def test_redacts_oauth_secrets_from_gmail_api_errors(self, urlopen_mock):
-        token_response = MagicMock()
-        token_response.__enter__.return_value.read.return_value = (
-            b'{"access_token":"access-token"}'
+    def test_redacts_relay_token_from_http_errors(self, urlopen_mock):
+        error_body = json.dumps({'error': 'Rejected relay-token'}).encode('utf-8')
+        urlopen_mock.side_effect = HTTPError(
+            'https://script.google.com/macros/s/test-id/exec',
+            401,
+            'Unauthorized',
+            {},
+            BytesIO(error_body),
         )
-        error_body = json.dumps({
-            'error': {
-                'status': 'UNAUTHENTICATED',
-                'message': (
-                    'Credentials client-secret refresh-token access-token rejected'
-                ),
-            },
-        }).encode('utf-8')
-        urlopen_mock.side_effect = [
-            token_response,
-            HTTPError(
-                GmailAPIEmailBackend.send_url,
-                401,
-                'Unauthorized',
-                {},
-                BytesIO(error_body),
-            ),
-        ]
         message = EmailMessage(
             'Aviso',
             'Texto',
@@ -143,12 +104,21 @@ class GmailAPIEmailBackendTests(SimpleTestCase):
         )
 
         with self.assertRaises(SMTPException) as context:
-            GmailAPIEmailBackend().send_messages([message])
+            GmailAppsScriptEmailBackend().send_messages([message])
 
         error_message = str(context.exception)
         self.assertIn('HTTP 401', error_message)
-        for secret in ('client-secret', 'refresh-token', 'access-token'):
-            self.assertNotIn(secret, error_message)
+        self.assertNotIn('relay-token', error_message)
+
+    @override_settings(
+        GMAIL_RELAY_URL='https://example.com/macros/s/test-id/exec',
+        GMAIL_RELAY_TOKEN='relay-token',
+    )
+    def test_rejects_non_apps_script_relay_url(self):
+        with self.assertRaisesMessage(SMTPException, 'GMAIL_RELAY_URL'):
+            GmailAppsScriptEmailBackend().send_messages([
+                EmailMessage('Aviso', 'Texto', 'hotel@gmail.com', ['guest@example.com']),
+            ])
 
 
 class HabitacionEdicionFormTests(SimpleTestCase):

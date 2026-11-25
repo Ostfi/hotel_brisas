@@ -26,11 +26,9 @@ services:
         fromDatabase:
           name: hotel-brisas-db
           property: connectionString
-      - key: GMAIL_CLIENT_ID
+      - key: GMAIL_RELAY_URL
         sync: false
-      - key: GMAIL_CLIENT_SECRET
-        sync: false
-      - key: GMAIL_REFRESH_TOKEN
+      - key: GMAIL_RELAY_TOKEN
         sync: false
       - key: DEFAULT_FROM_EMAIL
         value: ostwaldjoel09@gmail.com
