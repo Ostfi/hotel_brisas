@@ -1167,15 +1167,33 @@ def recepcion_hoy_view(request):
     ).order_by('fecha_ingreso')
     
     # Huéspedes que salen hoy (Check-out) - Deben entregar a las 11:00 AM
-    salidas_hoy = Reserva.objects.filter(
-        fecha_salida=hoy,
-        estado='En curso'
-    ).order_by('fecha_salida')
+    salidas_hoy = list(
+        Reserva.objects.filter(
+            fecha_salida=hoy,
+            estado='En curso',
+        )
+        .select_related('huesped', 'habitacion')
+        .prefetch_related('consumos')
+        .order_by('fecha_salida')
+    )
+    for reserva in salidas_hoy:
+        reserva.total_servicios_pendientes = sum(
+            (
+                consumo.total
+                for consumo in reserva.consumos.all()
+                if consumo.estado_pago == 'Pendiente'
+            ),
+            Decimal('0.00'),
+        )
+        reserva.total_pendiente_checkout = (
+            reserva.saldo_pendiente + reserva.total_servicios_pendientes
+        )
     
     return render(request, 'hotel_app/recepcion_hoy.html', {
         'llegadas_hoy': llegadas_hoy,
         'salidas_hoy': salidas_hoy,
-        'hoy': hoy
+        'hoy': hoy,
+        'metodos_pago': Pago.METODOS_PAGO,
     })
 
 @login_required

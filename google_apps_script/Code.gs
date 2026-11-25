@@ -1,7 +1,18 @@
 function doPost(e) {
-  const expectedToken = PropertiesService
-    .getScriptProperties()
-    .getProperty('RELAY_TOKEN');
+  let expectedToken = '';
+  try {
+    expectedToken = PropertiesService
+      .getScriptProperties()
+      .getProperty('RELAY_TOKEN');
+    return handlePost_(e, expectedToken);
+  } catch (error) {
+    const detail = safeErrorMessage_(error, expectedToken);
+    console.error('Unhandled doPost error:', detail);
+    return jsonResponse_({ ok: false, error: 'Apps Script: ' + detail });
+  }
+}
+
+function handlePost_(e, expectedToken) {
   if (!expectedToken) {
     return jsonResponse_({ ok: false, error: 'Relay token is not configured.' });
   }
@@ -55,10 +66,11 @@ function doPost(e) {
   try {
     GmailApp.sendEmail(to.join(','), subject, body, options);
   } catch (error) {
-    console.error('GmailApp.sendEmail failed:', error);
+    const detail = safeErrorMessage_(error, expectedToken);
+    console.error('GmailApp.sendEmail failed:', detail);
     return jsonResponse_({
       ok: false,
-      error: 'Gmail could not send the message. Check Apps Script executions.',
+      error: 'Gmail could not send the message: ' + detail,
     });
   }
 
@@ -79,6 +91,22 @@ function normalizeAddresses_(addresses) {
     .filter(function (address) {
       return address.length > 0;
     });
+}
+
+function safeErrorMessage_(error, token) {
+  let detail = (
+    error && error.message
+      ? String(error.message)
+      : 'Unexpected Apps Script error.'
+  );
+  if (token) {
+    detail = detail.split(token).join('[secret redacted]');
+  }
+  detail = detail.replace(
+    /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi,
+    '[email redacted]',
+  );
+  return detail.substring(0, 300);
 }
 
 function jsonResponse_(body) {

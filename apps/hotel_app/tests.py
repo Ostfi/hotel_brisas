@@ -1,6 +1,6 @@
 from io import BytesIO
 import json
-from datetime import timedelta
+from datetime import date, timedelta
 from decimal import Decimal
 from pathlib import Path
 from smtplib import SMTPException
@@ -376,6 +376,39 @@ class LoginFlowTests(TestCase):
         self.assertLess(content.index('</table>'), content.index('id="modalReserva'))
         self.assertIn('</tbody>', content)
         self.assertIn('</html>', content)
+
+    def test_reception_today_checkout_uses_post_and_shows_pending_payment_modal(self):
+        reserva = Reserva.objects.create(
+            huesped=self.huesped,
+            habitacion=self.habitacion,
+            fecha_ingreso=date.today() - timedelta(days=1),
+            fecha_salida=date.today(),
+            estado='En curso',
+            saldo_pendiente=Decimal('90000.00'),
+        )
+        self.client.force_login(self.user)
+
+        response = self.client.get(reverse('recepcion_hoy'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(
+            response,
+            f'action="{reverse("realizar_checkout", args=[reserva.pk])}"',
+        )
+        self.assertContains(response, 'method="post"')
+        self.assertContains(response, 'Pagos pendientes antes del Check-out')
+        self.assertContains(response, 'Total por confirmar: $90000 COP')
+        self.assertContains(response, 'name="metodo_pago"')
+        self.assertContains(response, f'data-bs-target="#modalCheckout{reserva.pk}"')
+
+        reserva.saldo_pendiente = Decimal('0.00')
+        reserva.save(update_fields=['saldo_pendiente'])
+        response = self.client.get(reverse('recepcion_hoy'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Realizar Check-Out (11 AM)')
+        self.assertContains(response, 'method="post"')
+        self.assertNotContains(response, 'Pagos pendientes antes del Check-out')
 
     def test_receptionist_sees_reservation_menu_without_administrator_links(self):
         receptionist = get_user_model().objects.create_user(

@@ -81,9 +81,20 @@
                         <td class="text-secondary">Hab. {{ res.habitacion.numero }} ({{ res.habitacion.tipo }})</td>
                         <td class="text-secondary">{{ res.fecha_ingreso }}</td>
                         <td class="text-end px-4">
-                            <a href="{% url 'realizar_checkout' res.id %}" class="btn btn-outline-primary btn-sm rounded-pill px-3 py-1" onclick="return confirm('¿Confirmar salida? La habitación quedará libre y marcada para limpieza.');">
-                                Realizar Check-Out (11 AM)
-                            </a>
+                            {% if res.total_pendiente_checkout > 0 %}
+                            <button type="button" class="btn btn-outline-warning btn-sm rounded-pill px-3 py-1"
+                                data-bs-toggle="modal" data-bs-target="#modalCheckout{{ res.id }}">
+                                Revisar pagos y Check-out
+                            </button>
+                            {% else %}
+                            <form method="post" action="{% url 'realizar_checkout' res.id %}" class="d-inline"
+                                onsubmit="return confirm('¿Confirmar salida? La habitación quedará libre y marcada para limpieza.');">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-outline-primary btn-sm rounded-pill px-3 py-1">
+                                    Realizar Check-Out (11 AM)
+                                </button>
+                            </form>
+                            {% endif %}
                         </td>
                     </tr>
                     {% empty %}
@@ -96,4 +107,55 @@
         </div>
     </div>
 </div>
+
+{% for res in salidas_hoy %}
+{% if res.total_pendiente_checkout > 0 %}
+<div class="modal fade" id="modalCheckout{{ res.id }}" tabindex="-1"
+    aria-labelledby="modalCheckoutTitulo{{ res.id }}" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow rounded-4">
+            <form method="post" action="{% url 'realizar_checkout' res.id %}">
+                {% csrf_token %}
+                <div class="modal-header border-0">
+                    <h5 id="modalCheckoutTitulo{{ res.id }}" class="modal-title fw-bold">Pagos pendientes antes del Check-out</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-warning">
+                        Confirma el pago pendiente antes de finalizar la estancia:
+                    </div>
+                    <ul class="mb-3">
+                        {% if res.saldo_pendiente > 0 %}
+                        <li>Saldo de hospedaje: <strong>${{ res.saldo_pendiente|floatformat:0 }} COP</strong></li>
+                        {% endif %}
+                        {% if res.total_servicios_pendientes > 0 %}
+                        <li>Servicios pendientes: <strong>${{ res.total_servicios_pendientes|floatformat:0 }} COP</strong></li>
+                        {% endif %}
+                    </ul>
+                    <p class="fw-semibold">Total por confirmar: ${{ res.total_pendiente_checkout|floatformat:0 }} COP</p>
+                    <label class="form-label fw-semibold" for="metodoPagoCheckout{{ res.id }}">Método de pago recibido</label>
+                    <select class="form-select" id="metodoPagoCheckout{{ res.id }}" name="metodo_pago" required>
+                        <option value="">Selecciona un método...</option>
+                        {% for codigo, nombre in metodos_pago %}
+                        <option value="{{ codigo }}">{{ nombre }}</option>
+                        {% endfor %}
+                    </select>
+                    <div class="form-check mt-3">
+                        <input class="form-check-input" type="checkbox" id="confirmarPagoCheckout{{ res.id }}"
+                            name="confirmar_pagos_pendientes" required>
+                        <label class="form-check-label" for="confirmarPagoCheckout{{ res.id }}">
+                            Confirmo que el huésped pagó el total pendiente indicado.
+                        </label>
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-outline-secondary rounded-pill" data-bs-dismiss="modal">Volver</button>
+                    <button type="submit" class="btn btn-primary rounded-pill">Confirmar pago y Check-out</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endfor %}
 {% endblock %}
